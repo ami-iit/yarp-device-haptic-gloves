@@ -84,6 +84,7 @@ public:
 
     // Vector of the human joint names
     std::vector<std::string> humanJointNameList;
+    std::vector<double> fingersHapticFeedback;
 
     // Vector of the URDF considered joint names
     std::vector<std::string> consideredJointNameList;
@@ -1200,6 +1201,18 @@ public:
         yInfo()<<"Force Actuator name:"<<name + suffix;
     }
     ~WeArtGloveForceActuator() override = default;
+
+    bool setHapticsCommand(std::vector<double>& forceValue, std::vector<double>& vibrotactileValue) const override
+    {
+        std::lock_guard<std::mutex> lock(m_gloveImpl->mutex);
+
+        for (size_t i = 0; i < m_gloveImpl->nFingers; i++)
+        {
+            gloveImpl->fingersHapticFeedback[i] = forceValue[i];
+            gloveImpl->fingersHapticFeedback[i + 5] = vibrotactileValue[i];
+        }
+        return true;
+    }
 
     bool setHapticCommand(double& value) const override
     {
