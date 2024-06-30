@@ -2,16 +2,20 @@
 
 ## Build and Install
 
-1. Install the `WeArtGloveLibRawData`
-2. clone the repo
-3. `mkdir && cd build`
-4. `cmake -G"Visual Studio 17 2022" ..`
-5. `cmake --build . --target INSTALL --config Release`
-6. Download and Install the latest WEARTMiddleware [link](https://weart.it/developer-guide/).
+1. Install the `WeArtGloveLib` following the instruction [here](https://github.com/ami-iit/WEART-SDK-Cpp/tree/devel_ami-iit#ami-iit).
+2. clone the repo `git clone https://github.com/ami-iit/yarp-device-haptic-gloves.git`
+3. `git checkout devel_WeartGlove`
+4. `mkdir && cd build`
+5. `cmake -G"Visual Studio 17 2022" ..`
+6. Notice that the files are going to be installed to `C:\Program Files (x86)\YOUR_PROJECT_NAME\bin`
+    - If you want to change `CMAKE_INSTALL_PREFIX`, run `ccmake ..`
+    - In our case: `C:<PATH_TO_ROBOTOLOGYSUPERBUILD>\build\install`
+7. `cmake --build . --target INSTALL --config Release`
+8. Download and Install the latest WEARTMiddleware [link](https://weart.it/developer-guide/).
 
 ### Parameters Manuals
 
-1. If you want to use the actuators, change the parameters below to `true`:
+1. If you want to enable the haptic feedback, change the parameters below to `true`:
 
 ```text
 use_force_feedback
