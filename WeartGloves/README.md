@@ -7,7 +7,7 @@
 3. `mkdir && cd build`
 4. `cmake -G"Visual Studio 17 2022" ..`
 5. `cmake --build . --target INSTALL --config Release`
-6. Install the WEARTMiddleware V2.1.10 [link](https://istitutoitalianotecnologia.sharepoint.com/:f:/r/sites/DynamicInteractionControl/Documenti%20condivisi/Telexistence/WEART%20Haptic%20Glove/Middleware?csf=1&web=1&e=sbJScy)
+6. Download and Install the latest WEARTMiddleware [link](https://weart.it/developer-guide/).
 
 ### Parameters Manuals
 
@@ -27,4 +27,8 @@ smoothing_factor
 
 Please keep in mind that the accepted value for this parameter is between 0 and 1 (_0 is not acceptable_)
 
-3. Please make sure `Send sensors data to client` is checked in the `Show UI test panel` of the WEARTMiddleware
+3. Tracking Algorithm (TA):
+It is possible to choose the type of tracking algorithm with the `tracking_algorithm` paramater. The available TAs are:
+    - **Simple Closure-based Tracking Algorithm (SCTA)**: This TA uses only closure information reading from a time of flight (ToF) sensor.
+
+    - **Advanced Sensor-based Tracking Algorithm (ASTA)**: This TA uses raw sensory information reading from Inertial Measurement Unit (IMU) sensor beside the ToF sensor.

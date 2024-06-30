@@ -6,8 +6,8 @@
  * @date 2022
  */
 
-#ifndef WEART_GLOVE_RAWDATA_H
-#define WEART_GLOVE_RAWDATA_H
+#ifndef WEART_GLOVE_H
+#define WEART_GLOVE_H
 
 #include <Wearable/IWear/IWear.h>
 

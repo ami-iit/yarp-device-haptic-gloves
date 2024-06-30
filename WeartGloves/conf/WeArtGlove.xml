@@ -5,11 +5,11 @@
 
     <!--Left HapticGlove Device-->
     <device type="WeArtGlove" name="LeftHapticGloveWearableDevice">
-        <param extern-name="period" name="period">0.01</param>
+        <param extern-name="period" name="period">0.1</param>
         <param name="wearableName">HapticGlove</param>
         <param name="is_right_hand">false</param>
-        <param extern-name="tracking_algorithm" name="tracking_algorithm">simple</param> <!--- Available Tracking Algorithms: simple, rawSensor-->
-        <param extern-name="use_force_feedback" name="use_force_feedback">false</param>
+        <param extern-name="tracking_algorithm" name="tracking_algorithm">SCTA</param> <!--- Available Tracking Algorithms(TA): SCTA: Simple Closure-based, ASTA: Advanced Sensor-based -->
+        <param extern-name="use_force_feedback" name="use_force_feedback">true</param>
         <param extern-name="use_temperature_feedback" name="use_temperature_feedback">false</param>
         <param extern-name="use_texture_feedback" name="use_texture_feedback">false</param>
         <param extern-name="textureId" name="textureId">21</param>
@@ -18,7 +18,7 @@
         <param extern-name="closure_to_human_joint_simple" name="closure_to_human_joint_simple">( 0.66, 0.0, 0.0,
                                                                                                   0.33, 0.0, 0.0,
                                                                                                   0.33, 0.0, 0.0,
-                                                                                                  0.442, 0.0, 0.0,
+                                                                                                  0.5, 0.0, 0.0,
                                                                                                   0.0, 0.33, 0.0,
                                                                                                   0.0, 0.33, 0.0,
                                                                                                   0.0, 0.20, 0.0,
@@ -67,14 +67,14 @@
                                             "jLeftMiddle1_rotx", "jLeftMiddle2_rotx", "jLeftMiddle3_rotx","jLeftElbow_roty", "jLeftWrist_rotx", "jLeftWrist_rotz")</param>
         <param name="finger_tip_frame_list">("l_ThumbEE", "l_IndexEE", "l_MiddleEE")</param>
         <!--The min_joint_limit and max_joint_limit should be in radians-->
-        <param extern-name="min_joint_limit" name="min_joint_limit">(-0.174, 0, 0, 0, 
+        <param extern-name="min_joint_limit" name="min_joint_limit">(0.174, 0, 0, 0, 
                                                                         0, 0, 0, 0, 
                                                                         0, 0, 0, 0, 
                                                                         0, 0, 0, 0,
                                                                         0, 0, 0, 0 )</param>
-        <param extern-name="max_joint_limit" name="max_joint_limit">(-1.919, 1.57, 0, 3.14, 
-                                                                        0, 1.57, 0, 3.14, 
-                                                                        0, 1.57, 0, 3.14, 
+        <param extern-name="max_joint_limit" name="max_joint_limit">(1.919, 1.57, 1.57, 3.14, 
+                                                                        0, 1.57, 4.71, 3.14, 
+                                                                        0, 1.57, 4.71, 3.14, 
                                                                         0, 4.71, 4.71, 4.71, 
                                                                         0, 4.71, 4.71, 4.71 )</param>
         <param name="hand_link">l_hand</param>
@@ -84,7 +84,7 @@
     </device>
 
     <device type="iwear_wrapper" name="LeftHapticGloveWearableDeviceWrapper">
-        <param name="period">0.01</param>
+        <param name="period">0.1</param>
         <param name="dataPortName">/WearableData/HapticGlove/LeftHand/data:o</param>
         <param name="rpcPortName">/WearableData/HapticGlove/LeftHand/metadataRpc:o</param>
         <action phase="startup" level="5" type="attach">
@@ -96,8 +96,8 @@
     </device>
 
     <device type="iwearactuators_wrapper" name="LeftHapticGloveWearableDeviceActuatorsWrapper">
-        <param name="period">0.01</param>
-        <param name="actuatorCommandInputPortName">/WearableData/HapticGlove/LeftHand/Actuators/input:i</param>
+        <param name="period">0.1</param>
+        <param name="gloveActuatorCommandInputPortName">/WearableData/HapticGlove/LeftHand/Actuators/input:i</param>
         <action phase="startup" level="5" type="attach">
             <paramlist name="networks">
                 <elem name="HapticGloveWearableDeviceActuatorWrapperLabel"> LeftHapticGloveWearableDevice </elem>
@@ -108,11 +108,11 @@
 
     <!--Right HapticGlove Device-->
     <device type="WeArtGlove" name="RightHapticGloveWearableDevice">
-        <param extern-name="period" name="period">0.01</param>
+        <param extern-name="period" name="period">0.1</param>
         <param name="wearableName">HapticGlove</param>
         <param name="is_right_hand">true</param>
-        <param extern-name="use_force_feedback" name="use_force_feedback">false</param>
-        <param extern-name="tracking_algorithm" name="tracking_algorithm">simple</param> <!--- Available Tracking Algorithms: simple, rawSensor-->
+        <param extern-name="use_force_feedback" name="use_force_feedback">true</param>
+        <param extern-name="tracking_algorithm" name="tracking_algorithm">SCTA</param> <!--- Available Tracking Algorithms(TA): SCTA: Simple Closure-based, ASTA: Advanced Sensor-based -->
         <param extern-name="use_temperature_feedback" name="use_temperature_feedback">false</param>
         <param extern-name="use_texture_feedback" name="use_texture_feedback">false</param>
         <param extern-name="textureId" name="textureId">21</param>
@@ -121,7 +121,7 @@
         <param extern-name="closure_to_human_joint_simple" name="closure_to_human_joint_simple">( 0.66, 0.0, 0.0,
                                                                                                   0.33, 0.0, 0.0,
                                                                                                   0.33, 0.0, 0.0,
-                                                                                                  0.442, 0.0, 0.0,
+                                                                                                  0.5, 0.0, 0.0,
                                                                                                   0.0, 0.33, 0.0,
                                                                                                   0.0, 0.33, 0.0,
                                                                                                   0.0, 0.20, 0.0,
@@ -175,9 +175,9 @@
                                                                         0, 0, 0, 0, 
                                                                         0, 0, 0, 0,
                                                                         0, 0, 0, 0 )</param>
-        <param extern-name="max_joint_limit" name="max_joint_limit">(1.919, 1.57, 0, 3.14, 
-                                                                        0, 1.57, 0, 3.14, 
-                                                                        0, 1.57, 0, 3.14, 
+        <param extern-name="max_joint_limit" name="max_joint_limit">(1.919, 1.57, 1.57, 3.14, 
+                                                                        0, 1.57, 4.71, 3.14, 
+                                                                        0, 1.57, 4.71, 3.14, 
                                                                         0, 4.71, 4.71, 4.71, 
                                                                         0, 4.71, 4.71, 4.71 )</param>
         <param name="hand_link">r_hand</param>
@@ -187,7 +187,7 @@
     </device>
 
     <device type="iwear_wrapper" name="RightHapticGloveWearableDeviceWrapper">
-        <param name="period">0.01</param>
+        <param name="period">0.1</param>
         <param name="dataPortName">/WearableData/HapticGlove/RightHand/data:o</param>
         <param name="rpcPortName">/WearableData/HapticGlove/RightHand/metadataRpc:o</param>
         <action phase="startup" level="5" type="attach">
@@ -199,8 +199,8 @@
     </device>
 
     <device type="iwearactuators_wrapper" name="RightHapticGloveWearableDeviceActuatorsWrapper">
-        <param name="period">0.01</param>
-        <param name="actuatorCommandInputPortName">/WearableData/HapticGlove/RightHand/Actuators/input:i</param>
+        <param name="period">0.1</param>
+        <param name="gloveActuatorCommandInputPortName">/WearableData/HapticGlove/RightHand/Actuators/input:i</param>
         <action phase="startup" level="5" type="attach">
             <paramlist name="networks">
                 <elem name="HapticGloveWearableDeviceActuatorWrapperLabel"> RightHapticGloveWearableDevice </elem>

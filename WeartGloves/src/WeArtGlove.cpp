@@ -84,7 +84,6 @@ public:
 
     // Vector of the human joint names
     std::vector<std::string> humanJointNameList;
-    std::vector<double> fingersHapticFeedback;
 
     // Vector of the URDF considered joint names
     std::vector<std::string> consideredJointNameList;
@@ -190,7 +189,7 @@ public:
     Eigen::Vector3d gravity;
 
     // Thimble Effect Class Definition
-    class ThimbleEffect : public WeArtEffect
+    class ThimbleEffect : public TouchEffect
     {
 
     public:
@@ -198,18 +197,12 @@ public:
         WeArtForce effForce;
         WeArtTexture effTexture;
 
-
-        ThimbleEffect(WeArtTemperature temp, WeArtForce force, WeArtTexture texture)
+        ThimbleEffect(WeArtTemperature temp, WeArtForce force, WeArtTexture texture) : TouchEffect(temp, force, texture)
         {
             effTemperature = temp;
             effForce = force;
             effTexture = texture;
         };
-
-        virtual WeArtTemperature	getTemperature(void)	override { return effTemperature; };
-        virtual WeArtForce			getForce(void)	override { return effForce; };
-        virtual WeArtTexture		getTexture(void)	override { return effTexture; };
-
     };
 
     // Structure for Thimble implementation
@@ -355,8 +348,8 @@ bool WeArtGlove::WeArtGloveImpl::open(yarp::os::Searchable& config)
         {
             std::lock_guard<std::mutex> lock(weArtClientMutex);
             thimbleInformationMap[thimble].hapticObject = std::make_unique<WeArtHapticObject>(weArtClient.get());
-            thimbleInformationMap[thimble].hapticObject->handSideFlag = (uint32_t)handSide;
-            thimbleInformationMap[thimble].hapticObject->actuationPointFlag = (uint32_t)actuationPoint;
+            thimbleInformationMap[thimble].hapticObject->handSideFlag = (int)handSide;
+            thimbleInformationMap[thimble].hapticObject->actuationPointFlag = (int)actuationPoint;
             thimbleInformationMap[thimble].tracking = std::make_unique<WeArtThimbleTrackingObject>(handSide, actuationPoint);
             thimbleInformationMap[thimble].thimbleEffect = std::make_shared<ThimbleEffect>(WeArtTemperature(), WeArtForce(), WeArtTexture());
             thimbleInformationMap[thimble].hapticObject->AddEffect(thimbleInformationMap[thimble].thimbleEffect.get());
@@ -491,6 +484,7 @@ bool WeArtGlove::WeArtGloveImpl::open(yarp::os::Searchable& config)
             // Start receiving raw sensor data from the middleware
             weArtClient->StartRawData();
             weArtClient->StartCalibration();
+            yarp::os::Time::delay(3);
         }
     }
     // Get Human Joint Names
@@ -557,7 +551,7 @@ bool WeArtGlove::WeArtGloveImpl::open(yarp::os::Searchable& config)
 
     // Fill the coupling Matrix
     yarp::os::Bottle* closureToHumanJointYarp;
-    if (trackingAlgorithmType == "simple")
+    if (trackingAlgorithmType == "SCTA")
     {
         if (!(config.check("closure_to_human_joint_simple")) || !config.find("closure_to_human_joint_simple").isList())
         {
@@ -579,7 +573,7 @@ bool WeArtGlove::WeArtGloveImpl::open(yarp::os::Searchable& config)
             closureToHumanJoint(row, col) = closureToHumanJointYarp->get(j).asFloat64();
         }
     }
-    else if (trackingAlgorithmType == "rawSensor")
+    else if (trackingAlgorithmType == "ASTA")
     {
         if (!(config.check("closure_to_human_joint_rawSensor")) || !config.find("closure_to_human_joint_rawSensor").isList())
         {
@@ -594,10 +588,10 @@ bool WeArtGlove::WeArtGloveImpl::open(yarp::os::Searchable& config)
             return false;
         }
         closureToHumanJoint.resize(20, 13);
-        for (int j = 0; j < closureToHumanJointYarp->size(); j++)
+        for (size_t j = 0; j < closureToHumanJointYarp->size(); j++)
         {
-            int col = j % consideredJointNameList.size();
-            int row = j / consideredJointNameList.size();
+            size_t col = j % consideredJointNameList.size();
+            size_t row = j / consideredJointNameList.size();
 
             closureToHumanJoint(row, col) = closureToHumanJointYarp->get(j).asFloat64();
         }
@@ -853,7 +847,7 @@ bool WeArtGlove::WeArtGloveImpl::update()
     {
         int thimbleNumber = thimbleNameToNumber(key);
 
-        if (trackingAlgorithmType == "simple")
+        if (trackingAlgorithmType == "SCTA")
         {
             //Raw Closure data
             weartClosure(thimbleNumber) = element.tracking->GetClosure();
@@ -861,7 +855,7 @@ bool WeArtGlove::WeArtGloveImpl::update()
             // Apply exponential smoothing
             weartClosureSmooth(thimbleNumber) = alpha * weartClosure(thimbleNumber) + (1 - alpha) * weartClosureSmooth(thimbleNumber);
         }
-        else if (trackingAlgorithmType == "rawSensor")
+        else if (trackingAlgorithmType == "ASTA")
         {
             weartRawDataSample = element.rawSensorData->GetLastSample();
 
@@ -879,27 +873,29 @@ bool WeArtGlove::WeArtGloveImpl::update()
             weartRawDataTof(thimbleNumber) = weartRawDataSample.data.timeOfFlight.distance;
         }
 
+        element.thimbleEffect->Set(element.thimbleEffect->effTemperature, element.thimbleEffect->effForce, element.thimbleEffect->effTexture);
+
         if (element.hapticObject->activeEffects.size() <= 0)
             element.hapticObject->AddEffect(element.thimbleEffect.get());
         else
             element.hapticObject->UpdateEffects();
     }
 
-    if (trackingAlgorithmType == "simple")
+    if (trackingAlgorithmType == "SCTA")
     {
         humanJointState = closureToHumanJoint * weartClosureSmooth;
 
         // saturate the computed values in the interval [0,1]
-        for (size_t i = 0; i < humanJointState.rows(); i++)
+        for (int i = 0; i < humanJointState.rows(); i++)
         {
-            for (size_t j = 0; j < humanJointState.cols(); j++)
+            for (int j = 0; j < humanJointState.cols(); j++)
             {
                 humanJointState(i, j) = std::max(0.0, std::min(1.0, humanJointState(i, j)));
             }
         }
         humanJointState = humanJointState.cwiseProduct((MAX_JOINT_LIMIT - MIN_JOINT_LIMIT)) + MIN_JOINT_LIMIT;
     }
-    else if (trackingAlgorithmType == "rawSensor")
+    else if (trackingAlgorithmType == "ASTA")
     {
         // Set the desired distance for the distance task
         thumbDistanceTaskptr->setDesiredDistance(weartRawDataTof(0) / 1000.0);  // thumb
@@ -1031,19 +1027,19 @@ bool WeArtGlove::open(yarp::os::Searchable& config)
         // Force
         if (pImpl->useForceFeedback)
         {
-            pImpl->weartGloveForceActuatorVector.push_back(std::make_shared<WeArtGloveImpl::WeArtGloveForceActuator>(pImpl.get(), entry.thimbleEffect, pImpl->forceActuatorPrefix + pImpl->handSidePrefix + key + "_finger"));
+            pImpl->weartGloveForceActuatorVector.push_back(std::make_shared<WeArtGloveImpl::WeArtGloveForceActuator>(pImpl.get(), entry.thimbleEffect, pImpl->forceActuatorPrefix));
         }
 
         // Texture
         if (pImpl->useTextureFeedback)
         {
-            pImpl->weartGloveTextureActuatorVector.push_back(std::make_shared<WeArtGloveImpl::WeArtGloveTextureActuator>(pImpl.get(), entry.thimbleEffect, pImpl->textureActuatorPrefix + pImpl->handSidePrefix + key + "_finger"));
+            pImpl->weartGloveTextureActuatorVector.push_back(std::make_shared<WeArtGloveImpl::WeArtGloveTextureActuator>(pImpl.get(), entry.thimbleEffect, pImpl->textureActuatorPrefix));
         }
 
         // Temperature
         if (pImpl->useTemperatureFeedBack)
         {
-            pImpl->weartGloveTemperatureActuatorVector.push_back(std::make_shared<WeArtGloveImpl::WeArtGloveTemperatureActuator>(pImpl.get(), entry.thimbleEffect, pImpl->temperatureActuatorPrefix + pImpl->handSidePrefix + key + "_finger"));
+            pImpl->weartGloveTemperatureActuatorVector.push_back(std::make_shared<WeArtGloveImpl::WeArtGloveTemperatureActuator>(pImpl.get(), entry.thimbleEffect, pImpl->temperatureActuatorPrefix));
         }
     }
 
@@ -1186,7 +1182,7 @@ private:
 class WeArtGlove::WeArtGloveImpl::WeArtGloveForceActuator : public wearable::actuator::IHaptic
 {
 public:
-    inline static const std::string suffix = "::ForceFeedback";
+    inline static const std::string suffix = "HapticFeedback"; //ForceFeedback
 
     WeArtGloveForceActuator(WeArtGlove::WeArtGloveImpl* gloveImplPtr,
                              std::shared_ptr<ThimbleEffect> thimbleEffect,
@@ -1202,35 +1198,27 @@ public:
     }
     ~WeArtGloveForceActuator() override = default;
 
-    bool setHapticsCommand(std::vector<double>& forceValue, std::vector<double>& vibrotactileValue) const override
-    {
-        std::lock_guard<std::mutex> lock(m_gloveImpl->mutex);
-
-        for (size_t i = 0; i < m_gloveImpl->nFingers; i++)
-        {
-            gloveImpl->fingersHapticFeedback[i] = forceValue[i];
-            gloveImpl->fingersHapticFeedback[i + 5] = vibrotactileValue[i];
-        }
-        return true;
-    }
-
     bool setHapticCommand(double& value) const override
     {
+        yError() << LogPrefix << "Wrong method has been called! To set the haptic command please use the setHapticsCommand method.";
+        return false;
+    }
 
-        if (value < 0 || value > 100)
-        {
-            yWarning()<<getActuatorName()<<":Received the command"<<value<<"The value should be between 0 and 100";
-            return false;
-        }
-
+    bool setHapticCommands(const std::vector<double>& forceValue, const std::vector<double>& vibrotactileValue) const override
+    {
         std::lock_guard<std::mutex> lock(gloveImpl->mutex);
+        for (auto &[key, element] : gloveImpl->thimbleInformationMap)
+        {
+            int thimbleNumber = gloveImpl->thimbleNameToNumber(key);
+            if (forceValue[thimbleNumber] < 0 || forceValue[thimbleNumber] > 100)
+            {
+                yError() << getActuatorName() << ":Received the command" << forceValue[thimbleNumber] << "The value should be between 0 and 100";
+                return false;
+            }
+            WeArtForce force = WeArtForce(true, (float)(forceValue[thimbleNumber] / 100.0));
 
-        WeArtForce force;
-
-        force.active = true;
-        force.value((float) value/100.0);
-
-        thimbleEffect->effForce = force;
+            gloveImpl->thimbleInformationMap[key].thimbleEffect->effForce = force;
+        }
 
         return true;
     }
@@ -1249,7 +1237,7 @@ private:
 class WeArtGlove::WeArtGloveImpl::WeArtGloveTextureActuator : public wearable::actuator::IHaptic
 {
 public:
-    inline static const std::string suffix = "::VibroTactileFeedback";
+    inline static const std::string suffix = "HapticFeedback"; //VibroTactileFeedback
 
     WeArtGloveTextureActuator(WeArtGlove::WeArtGloveImpl* gloveImplPtr,
                              std::shared_ptr<ThimbleEffect> thimbleEffect,
@@ -1267,21 +1255,32 @@ public:
 
     bool setHapticCommand(double& value) const override
     {
-        if (value > 100.0 || value < 0.0)
+        yError() << LogPrefix << "Wrong method has been called! To set the haptic command please use the setHapticsCommand method.";
+        return false;
+    }
+
+    bool setHapticCommands(const std::vector<double>& forceValue, const std::vector<double>& vibrotactileValue) const override
+    {
+        std::lock_guard<std::mutex> lock(gloveImpl->mutex);
+        for (auto &[key, element] : gloveImpl->thimbleInformationMap)
         {
-            yWarning()<<getActuatorName()<<":Received the command"<<value<<"The value should be between 0 and 100";
-            return false;
+            int thimbleNumber = gloveImpl->thimbleNameToNumber(key);
+            if (vibrotactileValue[thimbleNumber] > 100.0 || vibrotactileValue[thimbleNumber] < 0.0)
+            {
+                yError()<<getActuatorName()<<":Received the command"<<vibrotactileValue[thimbleNumber]<<"The value should be between 0 and 100";
+                return false;
+            }
+
+            WeArtTexture texture;
+
+            //TODO Modify texture object with the new firmware
+            texture.active = true;
+            texture.volume((float)vibrotactileValue[thimbleNumber]);
+            texture.textureVelocity(float(0.1));
+            texture.textureType(gloveImpl->textureId);
+
+            gloveImpl->thimbleInformationMap[key].thimbleEffect->effTexture = texture;
         }
-
-        WeArtTexture texture;
-
-        //TODO Modify texture object with the new firmware
-        texture.active = true;
-        texture.volume((float) value);
-        texture.textureVelocity(0.1);
-        texture.textureType(gloveImpl->textureId);
-
-        thimbleEffect->effTexture = texture;
         return true;
     }
 
@@ -1299,7 +1298,7 @@ private:
 class WeArtGlove::WeArtGloveImpl::WeArtGloveTemperatureActuator : public wearable::actuator::IHaptic //TODO IHeater
 {
 public:
-    inline static const std::string suffix = "::TemperatureFeedback";
+    inline static const std::string suffix = "::HapticFeedback"; //TemperatureFeedback
 
     WeArtGloveTemperatureActuator(WeArtGlove::WeArtGloveImpl* gloveImplPtr,
                              std::shared_ptr<ThimbleEffect> thimbleEffect,
@@ -1320,31 +1319,40 @@ public:
         inline const static double MAX_TEMP = 43;
 
     bool setHapticCommand(double& value) const override
-    { 
-        double command = value;
+    {
+        yError() << LogPrefix << "Wrong method has been called! To set the haptic command please use the setHapticsCommand method.";
+        return false;
+    }
+
+    bool setHapticCommands(const std::vector<double>& forceValue, const std::vector<double>& vibrotactileValue) const override
+    {
         std::lock_guard<std::mutex> lock(gloveImpl->mutex);
-
-        WeArtTemperature temperature;
-
-        if (command >= MIN_TEMP && command <= MAX_TEMP)
+        for (auto &[key, element] : gloveImpl->thimbleInformationMap)
         {
-            temperature.active = true;
-            command = (command - MIN_TEMP)/(MAX_TEMP - MIN_TEMP);
-        }
-        else if (command <= 0.0)
-        {
-            temperature.active = false;
-        }
-        else if (command < MIN_TEMP || command > MAX_TEMP)
-        {
-            yWarning()<<getActuatorName()<<":Received the command"<<command<<"The value should be between"<< MIN_TEMP <<"and" <<MAX_TEMP;
-            return false;
-        }
+            double command = 0.0;// Temperature sensor is not on the robot yet!
+            std::lock_guard<std::mutex> lock(gloveImpl->mutex);
 
-        temperature.value((float) command);
+            WeArtTemperature temperature;
 
-        thimbleEffect->effTemperature = temperature;
+            if (command >= MIN_TEMP && command <= MAX_TEMP)
+            {
+                temperature.active = true;
+                command = (command - MIN_TEMP)/(MAX_TEMP - MIN_TEMP);
+            }
+            else if (command <= 0.0)
+            {
+                temperature.active = false;
+            }
+            else if (command < MIN_TEMP || command > MAX_TEMP)
+            {
+                yError()<<getActuatorName()<<":Received the command"<<command<<"The value should be between"<< MIN_TEMP <<"and" <<MAX_TEMP;
+                return false;
+            }
 
+            temperature.value((float) command);
+
+            gloveImpl->thimbleInformationMap[key].thimbleEffect->effTemperature = temperature;
+        }
         return true;
     }
 

@@ -20,7 +20,6 @@ find_package(BipedalLocomotionFramework 0.9.0
   COMPONENTS VectorsCollection IK ParametersHandlerYarpImplementation
              ContinuousDynamicalSystem ManifConversions
              ParametersHandlerYarpImplementation REQUIRED)
-find_package(robometry)
 
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -83,7 +82,6 @@ target_link_libraries(${WeArtGloveDevName}
     ${iDynTree_LIBRARIES}
     BipedalLocomotion::IK
     BipedalLocomotion::ContinuousDynamicalSystem
-    robometry::robometry
     )
 
 yarp_install(TARGETS ${WeArtGloveDevName}
