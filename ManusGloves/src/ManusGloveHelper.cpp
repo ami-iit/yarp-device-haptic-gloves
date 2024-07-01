@@ -2,7 +2,7 @@
  * @file ManusGloveHelper.cpp
  * @authors Ehsan Ranjbari <ehsan.ranjbari@iit.it>
  * @copyright 2024 AMI Lab - Istituto Italiano di Tecnologia
- *            Released under the terms of the LGPLv2.1 or later, see LGPL.TXT
+ *            Released under the terms of the BSD-3-Clause
  * @date 2024
  */
 

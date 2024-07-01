@@ -1,7 +1,7 @@
 #/*
 # Copyright 2024 Istituto Italiano di Tecnologia (IIT)
 # @author Ehsan Ranjbari <ehsan.ranjbari@iit.it>
-#* CopyPolicy: Released under the terms of the LGPLv2.1 or later, see LGPL.TXT
+#* CopyPolicy: Released under the terms of the BSD-3-Clause
 #*/
 
 project(YARPManusGlove VERSION "0.0.1"
