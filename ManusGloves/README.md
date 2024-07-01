@@ -3,7 +3,6 @@
 # Dependencies
 ### Manus Glove SDK  
 - Download the SDK from https://www.manus-meta.com/resources/downloads/quantum-metagloves
-    - Credentials can be found [here](https://github.com/ami-iit/lab-organisation/wiki/Shared-accounts).
 - Extract the files into a folder and rename it "ManusGlove-API".
 
 - Add following environment variable:
