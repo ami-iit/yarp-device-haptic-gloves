@@ -32,10 +32,10 @@
 #include <Eigen/Core>
 
 // iDynTree headers
-#include <iDynTree/Model/FreeFloatingState.h>
-#include <iDynTree/KinDynComputations.h>
-#include <iDynTree/ModelIO/ModelLoader.h>
-#include <iDynTree/Core/EigenHelpers.h>
+#include <iDynTree/FreeFloatingState.h>  
+#include <iDynTree/KinDynComputations.h>  
+#include <iDynTree/ModelLoader.h>  
+#include <iDynTree/EigenHelpers.h> 
 
 // blf headers
 #include <BipedalLocomotion/ContinuousDynamicalSystem/FloatingBaseSystemKinematics.h>
