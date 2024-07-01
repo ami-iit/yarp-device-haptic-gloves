@@ -1,9 +1,9 @@
 #/*
 # Copyright 2021 Istituto Italiano di Tecnologia (IIT)
 # @author Ehsan Ranjbari <ehsan.ranjbari@iit.it>
-#* CopyPolicy: Released under the terms of the LGPLv2.1 or later, see LGPL.TXT
+#* CopyPolicy: Released under the terms of the BSD-3-Clause
 #*/
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.16)
 
 project(YARPWeArtGlove VERSION "0.0.1"
                   LANGUAGES CXX C)
@@ -42,11 +42,7 @@ if(MSVC)
 endif()
 
 # Libraries type
-if(MSVC)
-    option(BUILD_SHARED_LIBS "Build libraries as shared as opposed to static" OFF)
-else()
-    option(BUILD_SHARED_LIBS "Build libraries as shared as opposed to static" ON)
-endif()
+option(BUILD_SHARED_LIBS "Build libraries as shared as opposed to static" ON)
 
 # Enable RPATH support for installed binaries and libraries
 include(AddInstallRPATHSupport)

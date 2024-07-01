@@ -12,6 +12,7 @@
     - In our case: `C:<PATH_TO_ROBOTOLOGYSUPERBUILD>\build\install`
 7. `cmake --build . --target INSTALL --config Release`
 8. Download and Install the latest WEARTMiddleware [link](https://weart.it/developer-guide/).
+   - Latest tested version: v.2.3.0
 
 ### Parameters Manuals
 
