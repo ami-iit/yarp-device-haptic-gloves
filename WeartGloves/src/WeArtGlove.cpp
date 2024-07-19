@@ -32,10 +32,10 @@
 #include <Eigen/Core>
 
 // iDynTree headers
-#include <iDynTree/FreeFloatingState.h>  
-#include <iDynTree/KinDynComputations.h>  
-#include <iDynTree/ModelLoader.h>  
-#include <iDynTree/EigenHelpers.h> 
+#include <iDynTree/FreeFloatingState.h>
+#include <iDynTree/KinDynComputations.h>
+#include <iDynTree/ModelLoader.h>
+#include <iDynTree/EigenHelpers.h>
 
 // blf headers
 #include <BipedalLocomotion/ContinuousDynamicalSystem/FloatingBaseSystemKinematics.h>
@@ -250,6 +250,10 @@ bool WeArtGlove::WeArtGloveImpl::open(yarp::os::Searchable& config)
     handSidePrefix = isRightHand ? "r_" : "l_";
     PalmSidePrefix = isRightHand ? "Right" : "Left";
 
+/**
+ * The matrices below represents the rotation from the finger/palm sensor's frame to the base frame.
+ * The frames are visualised the model with iDyntree.
+ */
     if (PalmSidePrefix == "Right")
     {
         //Right Hand
@@ -288,9 +292,6 @@ bool WeArtGlove::WeArtGloveImpl::open(yarp::os::Searchable& config)
         return false;
     }
     std::vector<std::string> thimbles = {"thumb", "index", "middle", "palm"};
-
-    // Creates an object of class WeArtClient
-    const PCSTR DEFAULT_TCP_PORT_LEFT = "27015";
     {
         std::lock_guard<std::mutex> lock(weArtClientMutex);
         if (!weArtClient)
@@ -472,20 +473,22 @@ bool WeArtGlove::WeArtGloveImpl::open(yarp::os::Searchable& config)
 
     // Runs and Starts the Client and connect it to the Server (Middleware)
     {
+        std::lock_guard<std::mutex> lock(weArtClientMutex);
+        weArtClient->Run();
+        while (!weArtClient->IsConnected())
         {
-            std::lock_guard<std::mutex> lock(weArtClientMutex);
-            weArtClient->Run();
-            while (!weArtClient->IsConnected())
-            {
-                yError() << "The weArtClient is not connected!";
-                return false;
-            }
-            weArtClient->Start();
-            // Start receiving raw sensor data from the middleware
-            weArtClient->StartRawData();
-            weArtClient->StartCalibration();
-            yarp::os::Time::delay(3);
+            yError() << "The weArtClient is not connected!";
+            return false;
         }
+        weArtClient->Start();
+        // Start receiving raw sensor data from the middleware
+        weArtClient->StartRawData();
+        weArtClient->StartCalibration();
+    }
+    yarp::os::Time::delay(1);
+    while (weArtTrackingCalibration->getStatus() == CalibrationStatus::Running)
+    {
+        yDebug() << "Calibrating...!";
     }
     // Get Human Joint Names
     yarp::os::Bottle* jointListYarp;
@@ -582,12 +585,12 @@ bool WeArtGlove::WeArtGloveImpl::open(yarp::os::Searchable& config)
         }
         closureToHumanJointYarp = config.find("closure_to_human_joint_rawSensor").asList();
 
-        if (closureToHumanJointYarp->size() < 260)
+        if (closureToHumanJointYarp->size() < humanJointState.size() * consideredJointNameList.size())
         {
             yError() << LogPrefix << "size of the coupling matrix for rawSensor tracking is:" << closureToHumanJointYarp->size() << "Required 260";
             return false;
         }
-        closureToHumanJoint.resize(20, 13);
+        closureToHumanJoint.resize(humanJointState.size(), consideredJointNameList.size());
         for (size_t j = 0; j < closureToHumanJointYarp->size(); j++)
         {
             size_t col = j % consideredJointNameList.size();
@@ -601,8 +604,8 @@ bool WeArtGlove::WeArtGloveImpl::open(yarp::os::Searchable& config)
             return false;
         }
 
-        // Get URDF model path
-        std::string modelFile = config.check("model", yarp::os::Value("XSenseTestThreeFingers.urdf")).asString();
+        // Get URDF model path. NOTE: The directory containing the model should be added to the `YARP_DATA_DIRS`.
+        std::string modelFile = config.check("model", yarp::os::Value("HumanHandModel.urdf")).asString();
         std::string pathToModel = yarp::os::ResourceFinder::getResourceFinderSingleton().findFileByName(modelFile);
 
         if (pathToModel == "")
@@ -834,6 +837,11 @@ bool WeArtGlove::WeArtGloveImpl::open(yarp::os::Searchable& config)
         jointVelocity = Eigen::VectorXd::Zero(model.getNrOfDOFs());
 
     }
+    else
+    {
+        yError() << "The specified tracking algorithm is not supported!";
+        return false;
+    }
 
     return true;
 }
@@ -897,7 +905,7 @@ bool WeArtGlove::WeArtGloveImpl::update()
     }
     else if (trackingAlgorithmType == "ASTA")
     {
-        // Set the desired distance for the distance task
+        // Set the desired distance for the distance task. The values are devided by 1000.0 since they ToFs are in mm.
         thumbDistanceTaskptr->setDesiredDistance(weartRawDataTof(0) / 1000.0);  // thumb
         indexDistanceTaskptr->setDesiredDistance(weartRawDataTof(1) / 1000.0);  // index
         middleDistanceTaskptr->setDesiredDistance(weartRawDataTof(2) / 1000.0); // middle
@@ -956,7 +964,7 @@ bool WeArtGlove::WeArtGloveImpl::close()
     {
         element.hapticObject->RemoveEffect(element.thimbleEffect.get());
     }
-    
+
     yarp::os::Time::delay(1);
     {
         std::lock_guard<std::mutex> lock(weArtClientMutex);
@@ -1273,10 +1281,9 @@ public:
 
             WeArtTexture texture;
 
-            //TODO Modify texture object with the new firmware
             texture.active = true;
             texture.volume((float)vibrotactileValue[thimbleNumber]);
-            texture.textureVelocity(float(0.1));
+            texture.textureVelocity(float(0.1)); // The vale is chosen as a default intensity. It can be between (0-1).
             texture.textureType(gloveImpl->textureId);
 
             gloveImpl->thimbleInformationMap[key].thimbleEffect->effTexture = texture;
