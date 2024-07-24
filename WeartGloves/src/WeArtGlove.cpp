@@ -229,6 +229,10 @@ public:
     // Utilities Methods
     int thimbleNameToNumber(const std::string &name);
 
+    bool prepareKinDynComputations();
+
+    bool prepareQpTasks();
+
 };
 
 WeArtGlove::WeArtGloveImpl::WeArtGloveImpl() {}
@@ -642,200 +646,19 @@ bool WeArtGlove::WeArtGloveImpl::open(yarp::os::Searchable& config)
         }
 
         const iDynTree::Model &model = kinDynComp.model();
-
-        // Prepare pointer to KinDynComputations object
-        kinDyn = std::make_shared<iDynTree::KinDynComputations>();
-        kinDyn->setFrameVelocityRepresentation(iDynTree::FrameVelocityRepresentation::MIXED_REPRESENTATION);
-        kinDyn->loadRobotModel(mdlLoader.model());
-
-        jointVelocities.setZero(kinDyn->model().getNrOfDOFs());
-        jointPositions.setZero(kinDyn->model().getNrOfDOFs());
-
-        kinDyn->getRobotState(basePose, jointPositions, baseVelocity, jointVelocities, gravity);
-
-        dynamics = std::make_shared<FloatingBaseSystemKinematics>();
-
-        // initial state
-        dynamics->setState({basePose.topRightCorner<3, 1>(),            // base postion
-                            toManifRot(basePose.topLeftCorner<3, 3>()), // base rotation
-                            jointPositions});                           // joint position
-
-        integrator = std::make_shared<ForwardEuler<FloatingBaseSystemKinematics>>();
-        integrator->setIntegrationStep(dT); // dt->period
-        integrator->setDynamicalSystem(dynamics);
-
-        // Prepare the parameter handler. The task setup is done through this. This can be substituted with a configuration file
-        auto parameterHandler = std::make_shared<StdImplementation>();
-
-        auto ikParameterHandler = std::make_shared<StdImplementation>();
-        ikParameterHandler->setParameter("robot_velocity_variable_name", "robotVelocity");
-        ikParameterHandler->setParameter("verbosity", false);
-        parameterHandler->setGroup("IK", ikParameterHandler);
-
-        parameterHandler->setParameter("tasks",
-                                       std::vector<std::string>{"THUMB_DISTANCE_TASK",
-                                                                "INDEX_DISTANCE_TASK",
-                                                                "MIDDLE_DISTANCE_TASK",
-                                                                "THUMB_GRAVITY_TASK",
-                                                                "INDEX_GRAVITY_TASK",
-                                                                "MIDDLE_GRAVITY_TASK",
-                                                                "PALM_GRAVITY_TASK",
-                                                                "SE3_TASK",
-                                                                "REGULARIZATION_TASK",
-                                                                "JOINT_LIMITS_TASK"});
-
-        // Setup for the distance task
-
-        // thumb
-        auto thumbDistanceParameterHandler = std::make_shared<StdImplementation>();
-        thumbDistanceParameterHandler->setParameter("type", "DistanceTask");
-        thumbDistanceParameterHandler->setParameter("kp", convergenceRate);
-        const Eigen::VectorXd thumbWeightRegularization = 1000 * Eigen::VectorXd::Ones(1);
-        thumbDistanceParameterHandler->setParameter("weight", thumbWeightRegularization);
-        thumbDistanceParameterHandler->setParameter("reference_frame_name", PalmSidePrefix + "Palm");
-        thumbDistanceParameterHandler->setParameter("target_frame_name", fingerTipFrameNameList[0]);
-        thumbDistanceParameterHandler->setParameter("priority", 1);
-        parameterHandler->setGroup("THUMB_DISTANCE_TASK", thumbDistanceParameterHandler);
-
-        // index
-        auto indexDistanceParameterHandler = std::make_shared<StdImplementation>();
-        indexDistanceParameterHandler->setParameter("type", "DistanceTask");
-        indexDistanceParameterHandler->setParameter("kp", convergenceRate);
-        const Eigen::VectorXd indexWeightRegularization = 1000 * Eigen::VectorXd::Ones(1);
-        indexDistanceParameterHandler->setParameter("weight", indexWeightRegularization);
-        indexDistanceParameterHandler->setParameter("reference_frame_name", PalmSidePrefix + "Palm");
-        indexDistanceParameterHandler->setParameter("target_frame_name", fingerTipFrameNameList[1]);
-        indexDistanceParameterHandler->setParameter("priority", 1);
-        parameterHandler->setGroup("INDEX_DISTANCE_TASK", indexDistanceParameterHandler);
-
-        // middle
-        auto middleDistanceParameterHandler = std::make_shared<StdImplementation>();
-        middleDistanceParameterHandler->setParameter("type", "DistanceTask");
-        middleDistanceParameterHandler->setParameter("kp", convergenceRate);
-        const Eigen::VectorXd middleWeightRegularization = 1000 * Eigen::VectorXd::Ones(1);
-        middleDistanceParameterHandler->setParameter("weight", middleWeightRegularization);
-        middleDistanceParameterHandler->setParameter("reference_frame_name", PalmSidePrefix + "Palm");
-        middleDistanceParameterHandler->setParameter("target_frame_name", fingerTipFrameNameList[2]);
-        middleDistanceParameterHandler->setParameter("priority", 1);
-        parameterHandler->setGroup("MIDDLE_DISTANCE_TASK", middleDistanceParameterHandler);
-
-        // SE3 Task
-        auto SE3ParameterHandler = std::make_shared<StdImplementation>();
-        SE3ParameterHandler->setParameter("kp_linear", 0.0);
-        SE3ParameterHandler->setParameter("kp_angular", 0.0);
-        SE3ParameterHandler->setParameter("type", "SE3Task");
-        SE3ParameterHandler->setParameter("frame_name", "Pelvis");
-        SE3ParameterHandler->setParameter("priority", 0);
-        parameterHandler->setGroup("SE3_TASK", SE3ParameterHandler);
-
-        // Joint limit task
-        auto jointLimitsHandler = std::make_shared<StdImplementation>();
-        jointLimitsHandler->setParameter("type", "JointLimitsTask");
-        jointLimitsHandler->setParameter("sampling_time", dT);
-        jointLimitsHandler->setParameter("use_model_limits", false);
-        jointLimitsHandler->setParameter("priority", 0);
-        const Eigen::VectorXd kLimRegularization = 0.5 * Eigen::VectorXd::Ones(kinDyn->model().getNrOfDOFs());
-        jointLimitsHandler->setParameter("klim", kLimRegularization);
-
-        upperLimits.resize(kinDyn->model().getNrOfDOFs());
-        lowerLimits.resize(kinDyn->model().getNrOfDOFs());
-
-        if (PalmSidePrefix == "Right")
-        {
-            upperLimits << 1.5, 1.0, 1.6, 1.6, 1.6, 1.6, 1.6, 1.6, 1.6, 1.6, 3.0, 3.0, 3.0; // TODO: Read from XML
-            lowerLimits << 0.2, 0.3, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -3.0, -3.0, -3.0;
-        }
-        else if (PalmSidePrefix == "Left")
-        {
-            upperLimits << -0.1, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0;
-            lowerLimits << -1.0, -1.5, -1.5, -1.5, -1.5, -1.5, -1.5, -1.5, -1.5, -1.5, -1.5, -1.5, -1.5;
-        }
-
-        jointLimitsHandler->setParameter("upper_limits", upperLimits);
-        jointLimitsHandler->setParameter("lower_limits", lowerLimits);
-        parameterHandler->setGroup("JOINT_LIMITS_TASK", jointLimitsHandler);
-
-        // Joint regularization task
-        auto jointRegularizationHandler = std::make_shared<StdImplementation>();
-        jointRegularizationHandler->setParameter("type", "JointTrackingTask");
-        const Eigen::VectorXd kpRegularization = Eigen::VectorXd::Ones(kinDyn->model().getNrOfDOFs());
-        const Eigen::VectorXd weightRegularization = 10 * kpRegularization;
-        jointRegularizationHandler->setParameter("kp", kpRegularization);
-        jointRegularizationHandler->setParameter("weight", weightRegularization);
-        jointRegularizationHandler->setParameter("priority", 1);
-        parameterHandler->setGroup("REGULARIZATION_TASK", jointRegularizationHandler);
-
-        // Setup for the grvity task
-
-        // palm
-        auto palmGravityParameterHandler = std::make_shared<StdImplementation>();
-        palmGravityParameterHandler->setParameter("type", "GravityTask");
-        palmGravityParameterHandler->setParameter("kp", convergenceRate);
-        const Eigen::Vector2d palmWeightRegularizationGr = 10 * Eigen::Vector2d::Ones(2);
-        palmGravityParameterHandler->setParameter("weight", palmWeightRegularizationGr);
-        palmGravityParameterHandler->setParameter("target_frame_name", PalmSidePrefix + "Palm");
-        palmGravityParameterHandler->setParameter("priority", 1);
-        parameterHandler->setGroup("PALM_GRAVITY_TASK", palmGravityParameterHandler);
-
-        // thumb
-        auto thumbGravityParameterHandler = std::make_shared<StdImplementation>();
-        thumbGravityParameterHandler->setParameter("type", "GravityTask");
-        thumbGravityParameterHandler->setParameter("kp", convergenceRate);
-        const Eigen::Vector2d thumbWeightRegularizationGr = 10 * Eigen::Vector2d::Ones(2);
-        thumbGravityParameterHandler->setParameter("weight", thumbWeightRegularizationGr);
-        thumbGravityParameterHandler->setParameter("target_frame_name", fingerTipFrameNameList[0]);
-        thumbGravityParameterHandler->setParameter("priority", 1);
-        parameterHandler->setGroup("THUMB_GRAVITY_TASK", thumbGravityParameterHandler);
-
-        // index
-        auto indexGravityParameterHandler = std::make_shared<StdImplementation>();
-        indexGravityParameterHandler->setParameter("type", "GravityTask");
-        indexGravityParameterHandler->setParameter("kp", convergenceRate);
-        const Eigen::Vector2d indexWeightRegularizationGr = 10 * Eigen::Vector2d::Ones(2);
-        indexGravityParameterHandler->setParameter("weight", indexWeightRegularizationGr);
-        indexGravityParameterHandler->setParameter("target_frame_name", fingerTipFrameNameList[1]);
-        indexGravityParameterHandler->setParameter("priority", 1);
-        parameterHandler->setGroup("INDEX_GRAVITY_TASK", indexGravityParameterHandler);
-
-        // middle
-        auto middleGravityParameterHandler = std::make_shared<StdImplementation>();
-        middleGravityParameterHandler->setParameter("type", "GravityTask");
-        middleGravityParameterHandler->setParameter("kp", convergenceRate);
-        const Eigen::Vector2d middleWeightRegularizationGr = 10 * Eigen::Vector2d::Ones(1);
-        middleGravityParameterHandler->setParameter("weight", middleWeightRegularizationGr);
-        middleGravityParameterHandler->setParameter("target_frame_name", fingerTipFrameNameList[2]);
-        middleGravityParameterHandler->setParameter("priority", 1);
-        parameterHandler->setGroup("MIDDLE_GRAVITY_TASK", middleGravityParameterHandler);
-
-        // Construct the IK
-        ikProblem = std::make_shared<IntegrationBasedIKProblem>(QPInverseKinematics::build(parameterHandler, kinDyn));
-
-        auto baseSE3Task = std::dynamic_pointer_cast<SE3Task>(ikProblem->ik->getTask("SE3_TASK").lock());
-        baseSE3Task->setTaskControllerMode(SE3Task::Mode::Disable);
-        baseSE3Task->setSetPoint(manif::SE3d::Identity(),
-                                 manif::SE3d::Tangent::Zero());
-
-        auto regularizationTask = std::dynamic_pointer_cast<JointTrackingTask>(ikProblem->ik->getTask("REGULARIZATION_TASK").lock());
-        regularizationTask->setSetPoint(regularizationRate * Eigen::VectorXd::Ones(kinDyn->model().getNrOfDOFs()));
-
-        // Distance Task
-        thumbDistanceTaskptr = std::dynamic_pointer_cast<DistanceTask>(ikProblem->ik->getTask("THUMB_DISTANCE_TASK").lock());
-
-        indexDistanceTaskptr = std::dynamic_pointer_cast<DistanceTask>(ikProblem->ik->getTask("INDEX_DISTANCE_TASK").lock());
-
-        middleDistanceTaskptr = std::dynamic_pointer_cast<DistanceTask>(ikProblem->ik->getTask("MIDDLE_DISTANCE_TASK").lock());
-
-        // Gravity Task
-        palmGravityTaskptr = std::dynamic_pointer_cast<GravityTask>(ikProblem->ik->getTask("PALM_GRAVITY_TASK").lock());
-
-        thumbGravityTaskptr = std::dynamic_pointer_cast<GravityTask>(ikProblem->ik->getTask("THUMB_GRAVITY_TASK").lock());
-
-        indexGravityTaskptr = std::dynamic_pointer_cast<GravityTask>(ikProblem->ik->getTask("INDEX_GRAVITY_TASK").lock());
-
-        middleGravityTaskptr = std::dynamic_pointer_cast<GravityTask>(ikProblem->ik->getTask("MIDDLE_GRAVITY_TASK").lock());
-
         jointVelocity = Eigen::VectorXd::Zero(model.getNrOfDOFs());
 
+        // Prepare pointer to KinDynComputations object
+        if (!prepareKinDynComputations())
+        {
+            yError() << "Preparation of the KinDynComputation has failed!";
+        }
+
+        // Prepare the parameter handler.
+        if (!prepareQpTasks())
+        {
+            yError() << "Preparation of the QP tasks has failed!";
+        }
     }
     else
     {
@@ -1602,4 +1425,204 @@ int WeArtGlove::WeArtGloveImpl::thimbleNameToNumber(const std::string &name)
     }
 
     return  -1;
+}
+
+bool WeArtGlove::WeArtGloveImpl::prepareKinDynComputations()
+{
+    // Prepare pointer to KinDynComputations object
+    kinDyn = std::make_shared<iDynTree::KinDynComputations>();
+    kinDyn->setFrameVelocityRepresentation(iDynTree::FrameVelocityRepresentation::MIXED_REPRESENTATION);
+    kinDyn->loadRobotModel(mdlLoader.model());
+
+    jointVelocities.setZero(kinDyn->model().getNrOfDOFs());
+    jointPositions.setZero(kinDyn->model().getNrOfDOFs());
+
+    kinDyn->getRobotState(basePose, jointPositions, baseVelocity, jointVelocities, gravity);
+
+    dynamics = std::make_shared<FloatingBaseSystemKinematics>();
+
+    // initial state
+    dynamics->setState({basePose.topRightCorner<3, 1>(),            // base postion
+                        toManifRot(basePose.topLeftCorner<3, 3>()), // base rotation
+                        jointPositions});                           // joint position
+
+    integrator = std::make_shared<ForwardEuler<FloatingBaseSystemKinematics>>();
+    integrator->setIntegrationStep(dT); // dt->period
+    integrator->setDynamicalSystem(dynamics);
+
+    return true;
+}
+
+bool WeArtGlove::WeArtGloveImpl::prepareQpTasks()
+{
+    auto parameterHandler = std::make_shared<StdImplementation>();
+
+    auto ikParameterHandler = std::make_shared<StdImplementation>();
+    ikParameterHandler->setParameter("robot_velocity_variable_name", "robotVelocity");
+    ikParameterHandler->setParameter("verbosity", false);
+    parameterHandler->setGroup("IK", ikParameterHandler);
+
+    parameterHandler->setParameter("tasks",
+                                   std::vector<std::string>{"THUMB_DISTANCE_TASK",
+                                                            "INDEX_DISTANCE_TASK",
+                                                            "MIDDLE_DISTANCE_TASK",
+                                                            "THUMB_GRAVITY_TASK",
+                                                            "INDEX_GRAVITY_TASK",
+                                                            "MIDDLE_GRAVITY_TASK",
+                                                            "PALM_GRAVITY_TASK",
+                                                            "SE3_TASK",
+                                                            "REGULARIZATION_TASK",
+                                                            "JOINT_LIMITS_TASK"});
+
+    // Setup for the distance task
+
+    // thumb
+    auto thumbDistanceParameterHandler = std::make_shared<StdImplementation>();
+    thumbDistanceParameterHandler->setParameter("type", "DistanceTask");
+    thumbDistanceParameterHandler->setParameter("kp", convergenceRate);
+    const Eigen::VectorXd thumbWeightRegularization = 1000 * Eigen::VectorXd::Ones(1);
+    thumbDistanceParameterHandler->setParameter("weight", thumbWeightRegularization);
+    thumbDistanceParameterHandler->setParameter("reference_frame_name", PalmSidePrefix + "Palm");
+    thumbDistanceParameterHandler->setParameter("target_frame_name", fingerTipFrameNameList[0]);
+    thumbDistanceParameterHandler->setParameter("priority", 1);
+    parameterHandler->setGroup("THUMB_DISTANCE_TASK", thumbDistanceParameterHandler);
+
+    // index
+    auto indexDistanceParameterHandler = std::make_shared<StdImplementation>();
+    indexDistanceParameterHandler->setParameter("type", "DistanceTask");
+    indexDistanceParameterHandler->setParameter("kp", convergenceRate);
+    const Eigen::VectorXd indexWeightRegularization = 1000 * Eigen::VectorXd::Ones(1);
+    indexDistanceParameterHandler->setParameter("weight", indexWeightRegularization);
+    indexDistanceParameterHandler->setParameter("reference_frame_name", PalmSidePrefix + "Palm");
+    indexDistanceParameterHandler->setParameter("target_frame_name", fingerTipFrameNameList[1]);
+    indexDistanceParameterHandler->setParameter("priority", 1);
+    parameterHandler->setGroup("INDEX_DISTANCE_TASK", indexDistanceParameterHandler);
+
+    // middle
+    auto middleDistanceParameterHandler = std::make_shared<StdImplementation>();
+    middleDistanceParameterHandler->setParameter("type", "DistanceTask");
+    middleDistanceParameterHandler->setParameter("kp", convergenceRate);
+    const Eigen::VectorXd middleWeightRegularization = 1000 * Eigen::VectorXd::Ones(1);
+    middleDistanceParameterHandler->setParameter("weight", middleWeightRegularization);
+    middleDistanceParameterHandler->setParameter("reference_frame_name", PalmSidePrefix + "Palm");
+    middleDistanceParameterHandler->setParameter("target_frame_name", fingerTipFrameNameList[2]);
+    middleDistanceParameterHandler->setParameter("priority", 1);
+    parameterHandler->setGroup("MIDDLE_DISTANCE_TASK", middleDistanceParameterHandler);
+
+    // SE3 Task
+    auto SE3ParameterHandler = std::make_shared<StdImplementation>();
+    SE3ParameterHandler->setParameter("kp_linear", 0.0);
+    SE3ParameterHandler->setParameter("kp_angular", 0.0);
+    SE3ParameterHandler->setParameter("type", "SE3Task");
+    SE3ParameterHandler->setParameter("frame_name", "Pelvis");
+    SE3ParameterHandler->setParameter("priority", 0);
+    parameterHandler->setGroup("SE3_TASK", SE3ParameterHandler);
+
+    // Joint limit task
+    auto jointLimitsHandler = std::make_shared<StdImplementation>();
+    jointLimitsHandler->setParameter("type", "JointLimitsTask");
+    jointLimitsHandler->setParameter("sampling_time", dT);
+    jointLimitsHandler->setParameter("use_model_limits", false);
+    jointLimitsHandler->setParameter("priority", 0);
+    const Eigen::VectorXd kLimRegularization = 0.5 * Eigen::VectorXd::Ones(kinDyn->model().getNrOfDOFs());
+    jointLimitsHandler->setParameter("klim", kLimRegularization);
+
+    upperLimits.resize(kinDyn->model().getNrOfDOFs());
+    lowerLimits.resize(kinDyn->model().getNrOfDOFs());
+
+    if (PalmSidePrefix == "Right")
+    {
+        upperLimits << 1.5, 1.0, 1.6, 1.6, 1.6, 1.6, 1.6, 1.6, 1.6, 1.6, 3.0, 3.0, 3.0; // TODO: Read from XML
+        lowerLimits << 0.2, 0.3, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -3.0, -3.0, -3.0;
+    }
+    else if (PalmSidePrefix == "Left")
+    {
+        upperLimits << -0.1, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0;
+        lowerLimits << -1.0, -1.5, -1.5, -1.5, -1.5, -1.5, -1.5, -1.5, -1.5, -1.5, -1.5, -1.5, -1.5;
+    }
+
+    jointLimitsHandler->setParameter("upper_limits", upperLimits);
+    jointLimitsHandler->setParameter("lower_limits", lowerLimits);
+    parameterHandler->setGroup("JOINT_LIMITS_TASK", jointLimitsHandler);
+
+    // Joint regularization task
+    auto jointRegularizationHandler = std::make_shared<StdImplementation>();
+    jointRegularizationHandler->setParameter("type", "JointTrackingTask");
+    const Eigen::VectorXd kpRegularization = Eigen::VectorXd::Ones(kinDyn->model().getNrOfDOFs());
+    const Eigen::VectorXd weightRegularization = 10 * kpRegularization;
+    jointRegularizationHandler->setParameter("kp", kpRegularization);
+    jointRegularizationHandler->setParameter("weight", weightRegularization);
+    jointRegularizationHandler->setParameter("priority", 1);
+    parameterHandler->setGroup("REGULARIZATION_TASK", jointRegularizationHandler);
+
+    // Setup for the grvity task
+
+    // palm
+    auto palmGravityParameterHandler = std::make_shared<StdImplementation>();
+    palmGravityParameterHandler->setParameter("type", "GravityTask");
+    palmGravityParameterHandler->setParameter("kp", convergenceRate);
+    const Eigen::Vector2d palmWeightRegularizationGr = 10 * Eigen::Vector2d::Ones(2);
+    palmGravityParameterHandler->setParameter("weight", palmWeightRegularizationGr);
+    palmGravityParameterHandler->setParameter("target_frame_name", PalmSidePrefix + "Palm");
+    palmGravityParameterHandler->setParameter("priority", 1);
+    parameterHandler->setGroup("PALM_GRAVITY_TASK", palmGravityParameterHandler);
+
+    // thumb
+    auto thumbGravityParameterHandler = std::make_shared<StdImplementation>();
+    thumbGravityParameterHandler->setParameter("type", "GravityTask");
+    thumbGravityParameterHandler->setParameter("kp", convergenceRate);
+    const Eigen::Vector2d thumbWeightRegularizationGr = 10 * Eigen::Vector2d::Ones(2);
+    thumbGravityParameterHandler->setParameter("weight", thumbWeightRegularizationGr);
+    thumbGravityParameterHandler->setParameter("target_frame_name", fingerTipFrameNameList[0]);
+    thumbGravityParameterHandler->setParameter("priority", 1);
+    parameterHandler->setGroup("THUMB_GRAVITY_TASK", thumbGravityParameterHandler);
+
+    // index
+    auto indexGravityParameterHandler = std::make_shared<StdImplementation>();
+    indexGravityParameterHandler->setParameter("type", "GravityTask");
+    indexGravityParameterHandler->setParameter("kp", convergenceRate);
+    const Eigen::Vector2d indexWeightRegularizationGr = 10 * Eigen::Vector2d::Ones(2);
+    indexGravityParameterHandler->setParameter("weight", indexWeightRegularizationGr);
+    indexGravityParameterHandler->setParameter("target_frame_name", fingerTipFrameNameList[1]);
+    indexGravityParameterHandler->setParameter("priority", 1);
+    parameterHandler->setGroup("INDEX_GRAVITY_TASK", indexGravityParameterHandler);
+
+    // middle
+    auto middleGravityParameterHandler = std::make_shared<StdImplementation>();
+    middleGravityParameterHandler->setParameter("type", "GravityTask");
+    middleGravityParameterHandler->setParameter("kp", convergenceRate);
+    const Eigen::Vector2d middleWeightRegularizationGr = 10 * Eigen::Vector2d::Ones(1);
+    middleGravityParameterHandler->setParameter("weight", middleWeightRegularizationGr);
+    middleGravityParameterHandler->setParameter("target_frame_name", fingerTipFrameNameList[2]);
+    middleGravityParameterHandler->setParameter("priority", 1);
+    parameterHandler->setGroup("MIDDLE_GRAVITY_TASK", middleGravityParameterHandler);
+
+    // Construct the IK
+    ikProblem = std::make_shared<IntegrationBasedIKProblem>(QPInverseKinematics::build(parameterHandler, kinDyn));
+
+    auto baseSE3Task = std::dynamic_pointer_cast<SE3Task>(ikProblem->ik->getTask("SE3_TASK").lock());
+    baseSE3Task->setTaskControllerMode(SE3Task::Mode::Disable);
+    baseSE3Task->setSetPoint(manif::SE3d::Identity(),
+                             manif::SE3d::Tangent::Zero());
+
+    auto regularizationTask = std::dynamic_pointer_cast<JointTrackingTask>(ikProblem->ik->getTask("REGULARIZATION_TASK").lock());
+    regularizationTask->setSetPoint(regularizationRate * Eigen::VectorXd::Ones(kinDyn->model().getNrOfDOFs()));
+
+    // Distance Task
+    thumbDistanceTaskptr = std::dynamic_pointer_cast<DistanceTask>(ikProblem->ik->getTask("THUMB_DISTANCE_TASK").lock());
+
+    indexDistanceTaskptr = std::dynamic_pointer_cast<DistanceTask>(ikProblem->ik->getTask("INDEX_DISTANCE_TASK").lock());
+
+    middleDistanceTaskptr = std::dynamic_pointer_cast<DistanceTask>(ikProblem->ik->getTask("MIDDLE_DISTANCE_TASK").lock());
+
+    // Gravity Task
+    palmGravityTaskptr = std::dynamic_pointer_cast<GravityTask>(ikProblem->ik->getTask("PALM_GRAVITY_TASK").lock());
+
+    thumbGravityTaskptr = std::dynamic_pointer_cast<GravityTask>(ikProblem->ik->getTask("THUMB_GRAVITY_TASK").lock());
+
+    indexGravityTaskptr = std::dynamic_pointer_cast<GravityTask>(ikProblem->ik->getTask("INDEX_GRAVITY_TASK").lock());
+
+    middleGravityTaskptr = std::dynamic_pointer_cast<GravityTask>(ikProblem->ik->getTask("MIDDLE_GRAVITY_TASK").lock());
+
+    return true;
 }
