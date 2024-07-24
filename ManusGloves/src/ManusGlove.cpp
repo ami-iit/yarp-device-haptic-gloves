@@ -8,6 +8,7 @@
 
 #include <ManusGlove.h>
 #include <ManusSDK.h>
+#include <ManusGloveHelper.h>
 
 #include <yarp/os/Bottle.h>
 #include <yarp/os/LogStream.h>

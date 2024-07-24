@@ -27,7 +27,7 @@
 #include <yarp/sig/Vector.h>
 
 // Manus Glove
-#include <ManusGlove.h>
+#include <ManusSDK.h>
 
 /**
  * GloveControlHelper is an helper class for controlling the glove.

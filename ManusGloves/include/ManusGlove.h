@@ -9,10 +9,6 @@
 #ifndef MANUS_GLOVE_H
 #define MANUS_GLOVE_H
 
-// ManusSDK
-#include <ManusSDK.h>
-#include <ManusGloveHelper.h>
-
 #include <Wearable/IWear/IWear.h>
 
 #include <yarp/dev/DeviceDriver.h>
