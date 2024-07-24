@@ -104,7 +104,6 @@ public:
     ~ManusGloveHelper();
 
 //===================================================================================================================================================================================
-//TODO: Move to protected!
     /**
      * @brief Initialize the SDK, register the callbacks and set the coordinate system.
      * This needs to be done before any of the other SDK functions can be used.
@@ -132,12 +131,6 @@ public:
      * This callback is optional and here it changes the client's state.
      */
     static void OnDisconnectedCallback(const ManusHost* const p_Host);
-
-    /**
-     * @brief This gets called when the client is connected to manus core
-     * @param p_SkeletonStreamInfo contains the meta data on how much data regarding the skeleton we need to get from the SDK.
-     */
-    static void OnSkeletonStreamCallback(const SkeletonStreamInfo* const p_SkeletonStreamInfo);
 
     /**
      * @brief This gets called when receiving landscape information from core.
@@ -347,11 +340,6 @@ protected:
     std::vector<uint32_t> m_LoadedSkeletons;
 
     std::chrono::time_point<std::chrono::high_resolution_clock> m_TimeSinceLastDisconnect;
-
-    std::mutex m_SkeletonMutex;
-
-    ClientSkeletonCollection *m_NextSkeleton = nullptr;
-    ClientSkeletonCollection *m_Skeleton = nullptr;
 
     std::mutex m_LandscapeMutex;
     Landscape *m_NewLandscape = nullptr;

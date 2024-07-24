@@ -7,7 +7,6 @@
  */
 
 #include <ManusGloveHelper.h>
-#include <ManusGlove.h>
 
 using namespace manusGlove;
 using namespace std;
@@ -462,16 +461,6 @@ bool ManusGloveHelper::ConnectingToCore()
 
 bool ManusGloveHelper::UpdateBeforeDisplayingData() //TODO: FailedUpdate??
 {
-    m_SkeletonMutex.lock();
-    if (m_NextSkeleton != nullptr)
-    {
-        if (m_Skeleton != nullptr)//TODO: Can be removed!
-            delete m_Skeleton;
-        m_Skeleton = m_NextSkeleton;
-        m_NextSkeleton = nullptr;
-    }
-    m_SkeletonMutex.unlock();
-
     m_LandscapeMutex.lock();
     if (m_NewLandscape != nullptr)
     {
@@ -666,28 +655,6 @@ void ManusGloveHelper::OnDisconnectedCallback(const ManusHost* const p_Host)
 
     ManusHost t_Host(*p_Host);
     s_Instance->m_Host = std::make_unique<ManusHost>(t_Host);
-}
-
-void ManusGloveHelper::OnSkeletonStreamCallback(const SkeletonStreamInfo* const p_SkeletonStreamInfo)
-{
-    if (s_Instance)
-    {
-        ClientSkeletonCollection *t_NxtClientSkeleton = new ClientSkeletonCollection();
-        t_NxtClientSkeleton->skeletons.resize(p_SkeletonStreamInfo->skeletonsCount);
-
-        for (uint32_t i = 0; i < p_SkeletonStreamInfo->skeletonsCount; i++)
-        {
-            CoreSdk_GetSkeletonInfo(i, &t_NxtClientSkeleton->skeletons[i].info);
-            t_NxtClientSkeleton->skeletons[i].nodes.resize(t_NxtClientSkeleton->skeletons[i].info.nodesCount);
-            t_NxtClientSkeleton->skeletons[i].info.publishTime = p_SkeletonStreamInfo->publishTime;
-            CoreSdk_GetSkeletonData(i, t_NxtClientSkeleton->skeletons[i].nodes.data(), t_NxtClientSkeleton->skeletons[i].info.nodesCount);
-        }
-        s_Instance->m_SkeletonMutex.lock();
-        if (s_Instance->m_NextSkeleton != nullptr)
-            delete s_Instance->m_NextSkeleton;
-        s_Instance->m_NextSkeleton = t_NxtClientSkeleton;
-        s_Instance->m_SkeletonMutex.unlock();
-    }
 }
 
 void ManusGloveHelper::OnLandscapeCallback(const Landscape* const p_Landscape)
