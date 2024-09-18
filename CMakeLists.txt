@@ -29,6 +29,10 @@ add_install_rpath_support(BIN_DIRS "${CMAKE_INSTALL_FULL_BINDIR}"
                           INSTALL_NAME_DIR "${CMAKE_INSTALL_FULL_LIBDIR}"
                           USE_LINK_PATH)
 
+find_package(YARP REQUIRED)
+find_package(IWear 1.9.0 REQUIRED)
+find_package(Eigen3 REQUIRED)
+
 option(YARP_DEVICE_WEART_GLOVES_ENABLE "Flag that enables building WeArtGloves device" OFF)
 option(YARP_DEVICE_MANUS_GLOVES_ENABLE "Flag that enables building ManusGloves device" OFF)
 

@@ -12,10 +12,7 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 set(ManusGloveLibName "ManusSDK")
 set(ManusGloveDevName "ManusGlove")
 
-find_package(YARP REQUIRED)
 find_package(${ManusGloveLibName} REQUIRED)
-find_package(IWear 1.9.0 REQUIRED)
-find_package(Eigen3 REQUIRED)
 
 # Export all symbols in Windows
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
