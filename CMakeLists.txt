@@ -35,6 +35,7 @@ find_package(Eigen3 REQUIRED)
 
 option(YARP_DEVICE_WEART_GLOVES_ENABLE "Flag that enables building WeArtGloves device" OFF)
 option(YARP_DEVICE_MANUS_GLOVES_ENABLE "Flag that enables building ManusGloves device" OFF)
+option(YARP_DEVICE_SENSE_GLOVES_ENABLE "Flag that enables building SenseGlove device" OFF)
 
 # Flag to enable WeArtGloves device
 if(YARP_DEVICE_WEART_GLOVES_ENABLE)
@@ -44,6 +45,11 @@ endif()
 # Flag to enable ManusGloves device
 if(YARP_DEVICE_MANUS_GLOVES_ENABLE)
     add_subdirectory(ManusGloves)
+endif()
+
+# Flag to enable SenseGlove device
+if(YARP_DEVICE_SENSE_GLOVES_ENABLE)
+    add_subdirectory(SenseGlove)
 endif()
 
 include(AddUninstallTarget)
