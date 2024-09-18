@@ -38,7 +38,7 @@ else()
   set(LIB_TYPE "SHARED")
 endif()
 
-set(SenseGlove_INCLUDE_DIRS $ENV{SenseGlove_DIR}/include/SenseGlove/Core )
+set(SenseGlove_INCLUDE_DIRS $ENV{SenseGlove_DIR}/include/ )
 
 message(STATUS "Variable {SenseGlove_LIB}: ${SenseGlove_LIB}" )
 message(STATUS "variable {SenseGlove_INCLUDE_DIRS}: ${SenseGlove_INCLUDE_DIRS}" )

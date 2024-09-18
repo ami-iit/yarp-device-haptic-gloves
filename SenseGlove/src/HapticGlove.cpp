@@ -49,7 +49,7 @@ struct SenseGloveIMUData
     // actuators
     std::vector<double> fingersForceFeedback;
     std::vector<double> fingersVibroTactileFeedback;
-    senseGlove::ThumperCmd palmThumperFeedback;
+    double palmThumperFeedback;
     std::vector<double> fingersHapticFeedback; // [fingersForceFeedback,
                                                // fingersVibroTactileFeedback,
                                                // palmThumperFeedback]
@@ -143,7 +143,7 @@ bool HapticGlove::SenseGloveImpl::configure(yarp::os::Searchable& config)
     }
 
     this->gloveData.fingertipPoses.resize(this->nFingers, std::vector<double>(PoseSize));
-    if (!this->pGlove->getGloveFingertipLinksPose(this->gloveData.fingertipPoses)) {
+    if (!this->pGlove->getHandFingertipLinksPose(this->gloveData.fingertipPoses)) {
         yError() << LogPrefix << "Unable to get the human fingertip poses.";
         return false;
     }
@@ -175,8 +175,6 @@ bool HapticGlove::SenseGloveImpl::configure(yarp::os::Searchable& config)
     this->gloveData.fingersVibroTactileFeedback.resize(this->nFingers,
                                                        0.0); // 5 actuators
 
-    this->gloveData.palmThumperFeedback = senseGlove::ThumperCmd::TurnOff;
-
     // [force feedback, vibrotactile feedback] = nActuators
     this->gloveData.fingersHapticFeedback.resize(this->nActuators, 0.0);
 
@@ -193,7 +191,7 @@ bool HapticGlove::SenseGloveImpl::run()
 
     this->pGlove->getHandJointsAngles(this->gloveData.humanJointValues);
 
-    this->pGlove->getGloveFingertipLinksPose(this->gloveData.fingertipPoses);
+    this->pGlove->getHandFingertipLinksPose(this->gloveData.fingertipPoses);
 
     // link poses
     this->gloveData.humanLinkPoses[0] = this->gloveData.humanPalmLinkPose;
@@ -207,12 +205,11 @@ bool HapticGlove::SenseGloveImpl::run()
         this->gloveData.fingersVibroTactileFeedback[i] =
             this->gloveData.fingersHapticFeedback[i + this->nFingers];
     }
-    this->gloveData.palmThumperFeedback = static_cast<senseGlove::ThumperCmd>(
-        round(this->gloveData.fingersHapticFeedback[2 * this->nFingers]));
+    this->gloveData.palmThumperFeedback = this->gloveData.fingersHapticFeedback[2 * this->nFingers];
 
     this->pGlove->setFingersForceReference(this->gloveData.fingersForceFeedback);
     this->pGlove->setBuzzMotorsReference(this->gloveData.fingersVibroTactileFeedback);
-    this->pGlove->setPalmFeedbackThumper(this->gloveData.palmThumperFeedback);
+    this->pGlove->setPalmBuzzFeedback(this->gloveData.palmThumperFeedback);
 
     return true;
 }
@@ -230,8 +227,8 @@ bool HapticGlove::SenseGloveImpl::close()
         return false;
     }
 
-    if (!this->pGlove->turnOffPalmFeedbackThumper()) {
-        yError() << LogPrefix << "cannot turn off the glove palm thumper feedback.";
+    if (!this->pGlove->turnOffPalmBuzzFeedback()) {
+        yError() << LogPrefix << "cannot turn off the glove palm buzz feedback.";
         return false;
     }
 
