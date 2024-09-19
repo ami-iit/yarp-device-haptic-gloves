@@ -33,6 +33,10 @@ find_package(YARP REQUIRED)
 find_package(IWear 1.9.0 REQUIRED)
 find_package(Eigen3 REQUIRED)
 
+
+set(YARP_FORCE_DYNAMIC_PLUGINS ON)
+option(BUILD_SHARED_LIBS "Build libraries as shared as opposed to static" ON)
+
 option(YARP_DEVICE_WEART_GLOVES_ENABLE "Flag that enables building WeArtGloves device" OFF)
 option(YARP_DEVICE_MANUS_GLOVES_ENABLE "Flag that enables building ManusGloves device" OFF)
 option(YARP_DEVICE_SENSE_GLOVES_ENABLE "Flag that enables building SenseGlove device" OFF)

@@ -26,9 +26,6 @@ if(MSVC)
     add_definitions(-DNOMINMAX)
 endif()
 
-# Libraries type
-option(BUILD_SHARED_LIBS "Build libraries as shared as opposed to static" ON)
-
 # Compile the plugin by default
 yarp_prepare_plugin(${ManusGloveDevName} TYPE wearable::devices::${ManusGloveDevName}
                     INCLUDE include/ManusGlove.h
