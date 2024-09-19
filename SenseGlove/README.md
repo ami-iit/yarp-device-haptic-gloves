@@ -4,12 +4,12 @@ Here we are exposing the [SenseGlove SDK](https://github.com/Adjuvo/SenseGlove-A
 
 The following interfaces are exposed for each hand/glove:
 
-- human hand joint anlges (computed by SenseGlove SDK) `[20 DoF (each finger 4 DoF), rad]`
+- human hand joint angles (computed by SenseGlove SDK) `[20 DoF (each finger 4 DoF), rad]`
 - glove fingertip poses attached to the human fingertip wrt human frame `5 pose vectors [<position, quaternion>]`
 - glove hand pose (using the hand IMU data) wrt human hand inertial frame`Pose [<position, quaternion>]`
-- hand fingertip vibrotactile feedbacks `[5 values: 0-100]`
-- hand fingertip forceFeedback feedbacks `[5 values: 0-40 N]`
-- hand palm vibrotactile feedback `[1 value: `[`Enumerated in "senseGlove::ThumperCmd"`](./include/SenseGloveHelper.hpp)`]`
+- hand fingertip vibrotactile feedbacks `[5 values: 0.0 - 1.0]`
+- hand fingertip forceFeedback feedbacks `[5 values: 0.0 - 1.0]`
+- hand palm vibrotactile feedback `[1 value: 0.0 - 1.0]`
 
 
 ### Dependencies
@@ -18,53 +18,40 @@ The following interfaces are exposed for each hand/glove:
 ```
 git clone https://github.com/Adjuvo/SenseGlove-API
 cd SenseGlove-API
-git checkout baad587d4e165d7bfafd7f0c8ee6a1ce8ad651d6
+git checkout v2.102.1
 ```
-In Linux machine add following environment variable:
+In a Linux machine add following environment variable:
 
 ```
 export SenseGlove_DIR= <path tho the SenseGlove-API Folder>
-export PATH=${PATH}:${SenseGlove_DIR}/Core/SGCoreCpp/lib/linux/<build type(Release or Debug)> 
+export PATH=${PATH}:${SenseGlove_DIR}/lib/linux/v22/x86-64/<build type(Release or Debug)> 
 ```
-In Windows machine following environment variable:
+In a Windows machine following environment variable:
 
 ```
 set SenseGlove_DIR= <path tho the SenseGlove-API Folder>
-set PATH=${PATH}:${SenseGlove_DIR}/Core/SGCoreCpp/lib/win/<build type(Release or Debug)> 
+set PATH=${PATH}:${SenseGlove_DIR}/lib/win64/<msvc version>/<build type(Release or Debug)> 
 ```
+where `<msvc version>` is the the Visual Studio version you are using:
+- `msvc142` for Visual Studio 2019.
+- `msvc143` for Visual Studio 2022.
 
 ### BUILD
 
-Enable the option `ENABLE_HapticGlove` in Wearables when you are building it. Install the repository as well.
+Enable the option `YARP_DEVICE_SENSE_GLOVES_ENABLE`.
 
 ### RUN
 
+After building and installing the project.
 
-If you have installed correctly the Wearabes repository, and you have set the environment varaibles as mentioned in [Superbuild](https://github.com/robotology/robotology-superbuild)
-you can run the HapticGlove wearable device by the following command:
-
-
-- Run the following SenseGlove communication executable:
-    - Linux: run `SenseCom.x86_64` located in `<path tho the SenseGlove-API Folder>/SenseCom/Linux`
-    - Windows: run `SenseCom` located in `<path tho the SenseGlove-API Folder>/SenseCom/Win`
+- Run the SenseCom executable as indicated in the README on the SenseCom folder of the SenseGlove-API repository.
     
 - Then run:
 ```
-yarprobotinterface --config HapticGlove.xml
+yarprobotinterface --config SenseGlove.xml
 ```
 
-To check and visualize the the Sense Glove frames. 
-
-In order to build the frame visualizer, enable `ENABLE_FrameVisualizer` option in Wearables.
- 
-- You can run the following wearable frame visualizer module:
-```
-IWearFrameVisualizerModule --from HapticGloveFramesVisualizationConfig.ini
-```
-
-**N.B. when `SenseCom.x86_64` runs the glove colors in GUI should be blue. If it is not, try to do:**
+**N.B. when `SenseCom` runs the glove colors in GUI should be blue. If it is not, in Linux, try to do:**
 ``` 
 sudo adduser $USER dialout
 ```
-
-**N.B. In order to add `SenseCom.x86_64` executable to the list of application, follow the instructions in `config/SenseGlove.desktop`**
