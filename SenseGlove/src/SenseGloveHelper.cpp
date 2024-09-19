@@ -29,48 +29,62 @@ enum class FingerType : int32_t
 enum class FingerParsingFailure
 {
     None,
-    MultipleFound,
-    NotFound,
+    HandNotFound,
+    FingerNotFound,
+    JointNotFound,
 };
 
-std::pair<FingerType, FingerParsingFailure> getFingerType(const std::string& fingerName)
+std::pair<FingerType, FingerParsingFailure> getFingerType(bool isRightHand, const std::string& fingerName)
 {
-    size_t found = 0;
-    FingerType fingerType;
+    std::string input = fingerName;
     FingerParsingFailure failure = FingerParsingFailure::None;
-    if (fingerName.find("thumb") != std::string::npos)
+    FingerType fingerType = FingerType::Thumb;
+
+    //check that the first two letters are "r_" or "l_" depending on the hand and remove them
+    if (isRightHand && input.substr(0,2) == "r_")
     {
-        fingerType = FingerType::Thumb;
-        found++;
+        input = input.substr(2);
     }
-    if (fingerName.find("index") != std::string::npos)
+    else if (!isRightHand && input.substr(0, 2) == "l_")
     {
-        fingerType = FingerType::Index;
-        found++;
+        input = input.substr(2);
     }
-    if (fingerName.find("middle") != std::string::npos)
+    else
     {
-        fingerType = FingerType::Middle;
-        found++;
-    }
-    if (fingerName.find("ring") != std::string::npos)
-    {
-        fingerType = FingerType::Ring;
-        found++;
-    }
-    if (fingerName.find("pinky") != std::string::npos)
-    {
-        fingerType = FingerType::Pinky;
-        found++;
+        failure = FingerParsingFailure::HandNotFound;
+        return { fingerType, failure };
     }
 
-    if (found > 1)
+    bool found = false;
+    if (input.find("thumb") == 0)
     {
-        failure = FingerParsingFailure::MultipleFound;
+        fingerType = FingerType::Thumb;
+        found = true;
     }
-    else if (found == 0)
+    if (input.find("index") == 0)
     {
-        failure = FingerParsingFailure::NotFound;
+        fingerType = FingerType::Index;
+        found = true;
+    }
+    if (input.find("middle") == 0)
+    {
+        fingerType = FingerType::Middle;
+        found = true;
+    }
+    if (input.find("ring") == 0)
+    {
+        fingerType = FingerType::Ring;
+        found = true;
+    }
+    if (input.find("pinky") == 0 || input.find("little_finger") == 0)
+    {
+        fingerType = FingerType::Pinky;
+        found = true;
+    }
+
+    if (!found)
+    {
+        failure = FingerParsingFailure::FingerNotFound;
     }
 
     return {fingerType, failure};
@@ -94,54 +108,52 @@ SGCore::EHapticLocation getHapticLocation(FingerType fingerType)
     return SGCore::EHapticLocation::ThumbTip;
 }
 
-std::pair<HandJointIndex, FingerParsingFailure> getJointIndex(const std::string& jointName)
+std::pair<HandJointIndex, FingerParsingFailure> getJointIndex(bool isRightHand, const std::string& jointName)
 {
     HandJointIndex output;
-    size_t found = 0;
+    bool found = false;
     FingerParsingFailure failure = FingerParsingFailure::None;
 
-    auto parsedFinger = getFingerType(jointName);
+    auto parsedFinger = getFingerType(isRightHand, jointName);
     if (parsedFinger.second != FingerParsingFailure::None)
     {
         return {output, parsedFinger.second };
     }
+    std::string input = jointName;
+    input = input.substr(2); // remove the hand prefix
 
     output.fingerIndex = static_cast<int32_t>(parsedFinger.first);
 
-    if (jointName.find("oppose") != std::string::npos || jointName.find("abduction") != std::string::npos)
+    if (jointName.find("_oppose") != std::string::npos || jointName.find("_abduction") != std::string::npos)
     {
         // Oppose (for the thumb) and abduction joints are on the first joint in the z axis
         output.jointIndex = 0;
         output.angleIndex = 2;
-        found++;
+        found = true;
     }
     // All other joints are on the y axis
-    if (jointName.find("proximal") != std::string::npos)
+    if (jointName.find("_proximal") != std::string::npos)
     {
         output.jointIndex = 0;
         output.angleIndex = 1;
-        found++;
+        found = true;
     }
-    if (jointName.find("intermediate") != std::string::npos)
+    if (jointName.find("_middle") != std::string::npos)
     {
         output.jointIndex = 1;
         output.angleIndex = 1;
-        found++;
+        found = true;
     }
-    if (jointName.find("distal") != std::string::npos)
+    if (jointName.find("_distal") != std::string::npos)
     {
         output.jointIndex = 2;
         output.angleIndex = 1;
-        found++;
+        found = true;
     }
 
-    if (found > 1)
+    if (!found)
     {
-        failure = FingerParsingFailure::MultipleFound;
-    }
-    else if (found == 0)
-    {
-        failure = FingerParsingFailure::NotFound;
+        failure = FingerParsingFailure::JointNotFound;
     }
 
     return {output, failure};
@@ -188,15 +200,20 @@ bool SenseGloveHelper::configure(const yarp::os::Searchable& config)
 
     for (size_t i = 0; i < jointListYarp->size(); i++) {
         std::string jointName = jointListYarp->get(i).asString();
-        auto parsed = getJointIndex(jointName);
-        if (parsed.second == FingerParsingFailure::MultipleFound)
+        auto parsed = getJointIndex(m_isRightHand, jointName);
+        if (parsed.second == FingerParsingFailure::HandNotFound)
         {
-            yError() << LogPrefix << "Multiple joint or fingers found in the joint name: " << jointName;
+            yError() << LogPrefix << "Hand name not found or not correct in the joint name: " << jointName;
             return false;
         }
-        if (parsed.second == FingerParsingFailure::NotFound)
+        if (parsed.second == FingerParsingFailure::FingerNotFound)
         {
-            yError() << LogPrefix << "Unrecognized joint or finger name: " << jointName;
+            yError() << LogPrefix << "Unrecognized finger name in the joint name: " << jointName;
+            return false;
+        }
+        if (parsed.second == FingerParsingFailure::JointNotFound)
+        {
+            yError() << LogPrefix << "Unrecognized joint name in the joint name: " << jointName;
             return false;
         }
         m_humanJointIndexMap[jointName] = parsed.first;
@@ -215,15 +232,15 @@ bool SenseGloveHelper::configure(const yarp::os::Searchable& config)
     for (size_t i = 0; i < fingerListYarp->size(); i++) {
         std::string fingerName = fingerListYarp->get(i).asString();
 
-        auto parsed = getFingerType(fingerName);
-        if (parsed.second == FingerParsingFailure::MultipleFound)
+        auto parsed = getFingerType(m_isRightHand, fingerName);
+        if (parsed.second == FingerParsingFailure::HandNotFound)
         {
-            yError() << LogPrefix << "Multiple finger types found in the finger name: " << fingerName;
+            yError() << LogPrefix << "Hand name not found or not correct in the finger name: " << fingerName;
             return false;
         }
-        if (parsed.second == FingerParsingFailure::NotFound)
+        if (parsed.second == FingerParsingFailure::FingerNotFound)
         {
-            yError() << LogPrefix << "Unrecognized finger name: " << fingerName;
+            yError() << LogPrefix << "Unrecognized finger name in: " << fingerName;
             return false;
         }
 
@@ -527,6 +544,7 @@ SenseGloveHelper::~SenseGloveHelper() {}
 
 bool SenseGloveHelper::close()
 {
+    SGCore::HandLayer::StopAllHaptics(m_isRightHand);
     turnOffBuzzMotors();
     turnOffForceFeedback();
     turnOffPalmBuzzFeedback();
