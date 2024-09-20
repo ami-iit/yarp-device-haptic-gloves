@@ -73,10 +73,6 @@ public:
 
     TimeStamp timeStamp;
 
-    // Number of actuators
-    const int nActuators = 11; // humanFingerNames.size()*2 + hand/palm thumper
-    const int nActuatorsPerGlove = 5; // Number of the actuators per glove
-
     std::unique_ptr<senseGlove::SenseGloveHelper> pGlove; /**< Pointer to the glove object. */
 
     // link Sensor
@@ -170,7 +166,7 @@ bool HapticGlove::SenseGloveImpl::configure(yarp::os::Searchable& config)
                                                        0.0); // 5 actuators
 
     // [force feedback, vibrotactile feedback] = nActuators
-    this->gloveData.fingersHapticFeedback.resize(this->nActuators, 0.0);
+    this->gloveData.fingersHapticFeedback.resize(this->gloveData.humanFingerNames.size() * 2 + 1, 0.0);
 
     return true;
 }
@@ -538,7 +534,7 @@ public:
 
         std::lock_guard<std::mutex> lock(m_gloveImpl->mutex);
 
-        if (forceValue.size() != m_gloveImpl->nActuatorsPerGlove || vibrotactileValue.size() != m_gloveImpl->nActuatorsPerGlove)
+        if (forceValue.size() != m_gloveImpl->gloveData.humanFingerNames.size() || vibrotactileValue.size() != m_gloveImpl->gloveData.humanFingerNames.size())
         {
             yError() << "The sizes of the forceValue and the vibrotactileValue vectors are not correct!";
             return false;
