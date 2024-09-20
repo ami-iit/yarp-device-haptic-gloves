@@ -5,7 +5,7 @@
 
     <!--Left HapticGlove Device-->
     <device type="SenseGlove" name="LeftHapticGloveWearableDevice">
-        <param extern-name="period" name="period">0.01</param>
+        <param extern-name="period" name="period">0.1</param>
         <param name="rightHand">false</param>
         <param name="human_joint_list">( "l_thumb_oppose", "l_thumb_proximal", "l_thumb_middle", "l_thumb_distal",
                                          "l_index_abduction", "l_index_proximal", "l_index_middle", "l_index_distal",
@@ -41,7 +41,7 @@
 
     <!--Right HapticGlove Device-->
     <device type="SenseGlove" name="RightHapticGloveWearableDevice">
-        <param extern-name="period" name="period">0.01</param>
+        <param extern-name="period" name="period">0.1</param>
         <param name="rightHand">true</param>
         <param name="human_joint_list">( "r_thumb_oppose", "r_thumb_proximal", "r_thumb_middle", "r_thumb_distal",
                                      "r_index_abduction", "r_index_proximal", "r_index_middle", "r_index_distal",
