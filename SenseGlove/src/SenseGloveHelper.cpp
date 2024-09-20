@@ -474,41 +474,6 @@ bool SenseGloveHelper::getPalmLinkPose(std::vector<double>& palmLinkPose)
     return true;
 }
 
-bool SenseGloveHelper::turnOffBuzzMotors()
-{
-    SGCore::HandLayer::QueueCommand_VibroLevel(m_isRightHand, SGCore::EHapticLocation::ThumbTip, 0.0, false);
-    SGCore::HandLayer::QueueCommand_VibroLevel(m_isRightHand, SGCore::EHapticLocation::IndexTip, 0.0, false);
-    SGCore::HandLayer::QueueCommand_VibroLevel(m_isRightHand, SGCore::EHapticLocation::MiddleTip, 0.0, false);
-    SGCore::HandLayer::QueueCommand_VibroLevel(m_isRightHand, SGCore::EHapticLocation::RingTip, 0.0, false);
-    SGCore::HandLayer::QueueCommand_VibroLevel(m_isRightHand, SGCore::EHapticLocation::PinkyTip, 0.0, false);
-    SGCore::HandLayer::SendHaptics(m_isRightHand);
-
-    return true;
-}
-
-bool SenseGloveHelper::turnOffForceFeedback()
-{
-    for (int32_t finger = 0; finger < 5; ++finger)
-    {
-        SGCore::HandLayer::QueueCommand_ForceFeedbackLevel(m_isRightHand, finger, 0.0, false);
-    }
-    SGCore::HandLayer::SendHaptics(m_isRightHand);
-
-    return true;
-}
-
-bool SenseGloveHelper::turnOffPalmBuzzFeedback()
-{
-    setPalmBuzzFeedback(0.0);
-    return true;
-}
-
-bool senseGlove::SenseGloveHelper::turnOffPalmForceFeedback()
-{
-    setPalmForceFeedback(0.0);
-    return true;
-}
-
 bool SenseGloveHelper::getHumanJointNameList(std::vector<std::string>& jointList) const
 {
     if (m_humanJointNameList.size() == 0) {
@@ -542,12 +507,7 @@ bool SenseGloveHelper::getHumanFingerNameList(std::vector<std::string>& fingerLi
 
 SenseGloveHelper::~SenseGloveHelper() {}
 
-bool SenseGloveHelper::close()
+void SenseGloveHelper::close()
 {
     SGCore::HandLayer::StopAllHaptics(m_isRightHand);
-    turnOffBuzzMotors();
-    turnOffForceFeedback();
-    turnOffPalmBuzzFeedback();
-    turnOffPalmForceFeedback();
-    return true;
 }

@@ -166,30 +166,6 @@ public:
     bool getPalmLinkPose(std::vector<double>& palmLinkPose);
 
     /**
-     * Trun off the vibro-tactile feedback
-     * @return true / false in case of success / failure
-     */
-    bool turnOffBuzzMotors();
-
-    /**
-     * Trun off the force feedback
-     * @return true / false in case of success / failure
-     */
-    bool turnOffForceFeedback();
-
-    /**
-     * Trun off the palm thumper feedback
-     * @return true / false in case of success / failure
-     */
-    bool turnOffPalmBuzzFeedback();
-
-    /**
-     * Trun off the palm force feedback
-     * @return true / false in case of success / failure
-     */
-    bool turnOffPalmForceFeedback();
-
-    /**
      * Get the human joint list
      * @param jointList the human joint list
      * @return true / false in case of success / failure
@@ -214,7 +190,7 @@ public:
      * close the device
      * @return true / false in case of connected / disconnected
      */
-    bool close();
+    void close();
 };
 
 #endif
