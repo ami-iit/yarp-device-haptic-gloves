@@ -73,11 +73,6 @@ public:
 
     TimeStamp timeStamp;
 
-    const size_t nFingers = 5;
-
-    // Number of sensors
-    const int nLinkSensors = 6; // 1 palm (hand) imu + 5 fingertips
-
     // Number of actuators
     const int nActuators = 11; // humanFingerNames.size()*2 + hand/palm thumper
     const int nActuatorsPerGlove = 5; // Number of the actuators per glove
@@ -142,7 +137,6 @@ bool HapticGlove::SenseGloveImpl::configure(yarp::os::Searchable& config)
         return false;
     }
 
-    this->gloveData.fingertipPoses.resize(this->nFingers, std::vector<double>(PoseSize));
     if (!this->pGlove->getHandFingertipLinksPose(this->gloveData.fingertipPoses)) {
         yError() << LogPrefix << "Unable to get the human fingertip poses.";
         return false;
@@ -167,12 +161,12 @@ bool HapticGlove::SenseGloveImpl::configure(yarp::os::Searchable& config)
         return false;
     }
 
-    this->gloveData.humanLinkPoses.resize(this->nLinkSensors, std::vector<double>(PoseSize));
+    this->gloveData.humanLinkPoses.resize(this->gloveData.humanFingerNames.size() + 1, std::vector<double>(PoseSize));
 
-    this->gloveData.fingersForceFeedback.resize(this->nFingers,
-                                                0.0); // 5 actuators
+    this->gloveData.fingersForceFeedback.resize(this->gloveData.humanFingerNames.size(),
+                                                0.0);
 
-    this->gloveData.fingersVibroTactileFeedback.resize(this->nFingers,
+    this->gloveData.fingersVibroTactileFeedback.resize(this->gloveData.humanFingerNames.size(),
                                                        0.0); // 5 actuators
 
     // [force feedback, vibrotactile feedback] = nActuators
@@ -195,17 +189,17 @@ bool HapticGlove::SenseGloveImpl::run()
 
     // link poses
     this->gloveData.humanLinkPoses[0] = this->gloveData.humanPalmLinkPose;
-    for (size_t i = 0; i < this->nFingers; i++) {
+    for (size_t i = 0; i < this->gloveData.humanFingerNames.size(); i++) {
         this->gloveData.humanLinkPoses[i + 1] = this->gloveData.fingertipPoses[i];
     }
 
     // actuators
-    for (size_t i = 0; i < this->nFingers; i++) {
+    for (size_t i = 0; i < this->gloveData.humanFingerNames.size(); i++) {
         this->gloveData.fingersForceFeedback[i] = this->gloveData.fingersHapticFeedback[i];
         this->gloveData.fingersVibroTactileFeedback[i] =
-            this->gloveData.fingersHapticFeedback[i + this->nFingers];
+            this->gloveData.fingersHapticFeedback[i + this->gloveData.humanFingerNames.size()];
     }
-    this->gloveData.palmThumperFeedback = this->gloveData.fingersHapticFeedback[2 * this->nFingers];
+    this->gloveData.palmThumperFeedback = this->gloveData.fingersHapticFeedback[2 * this->gloveData.humanFingerNames.size()];
 
     this->pGlove->setFingersForceReference(this->gloveData.fingersForceFeedback);
     this->pGlove->setBuzzMotorsReference(this->gloveData.fingersVibroTactileFeedback);
@@ -347,11 +341,11 @@ bool HapticGlove::open(yarp::os::Searchable& config)
         m_pImpl->gloveData.humanHapticActuatorNameIdMap.emplace(
             std::make_pair(m_pImpl->hapticActuatorPrefix + m_pImpl->gloveData.humanFingerNames[i]
                                + "::VibroTactileFeedback",
-                           i + m_pImpl->nFingers));
+                           i + m_pImpl->gloveData.humanFingerNames.size()));
 
     m_pImpl->gloveData.humanHapticActuatorNameIdMap.emplace(std::make_pair(
         m_pImpl->hapticActuatorPrefix + m_pImpl->gloveData.humanHandLinkName + "::palmThumper",
-        2 * m_pImpl->nFingers));
+        2 * m_pImpl->gloveData.humanFingerNames.size()));
 
     yInfo() << LogPrefix << "The device is opened successfully.";
 
@@ -549,7 +543,7 @@ public:
             yError() << "The sizes of the forceValue and the vibrotactileValue vectors are not correct!";
             return false;
         }
-        for (size_t i = 0; i < m_gloveImpl->nFingers; i++)
+        for (size_t i = 0; i < m_gloveImpl->gloveData.humanFingerNames.size(); i++)
         {
             m_gloveImpl->gloveData.fingersHapticFeedback[i] = forceValue[i];
             m_gloveImpl->gloveData.fingersHapticFeedback[i + 5] = vibrotactileValue[i];
