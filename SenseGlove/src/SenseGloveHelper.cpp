@@ -120,11 +120,11 @@ std::pair<HandJointIndex, FingerParsingFailure> getJointIndex(bool isRightHand, 
         return {output, parsedFinger.second };
     }
     std::string input = jointName;
-    input = input.substr(2); // remove the hand prefix
+    input = input.substr(6); // remove the hand prefix and most of the finger prefix
 
     output.fingerIndex = static_cast<int32_t>(parsedFinger.first);
 
-    if (jointName.find("_oppose") != std::string::npos || jointName.find("_abduction") != std::string::npos)
+    if (input.find("_oppose") != std::string::npos || input.find("_abduction") != std::string::npos)
     {
         // Oppose (for the thumb) and abduction joints are on the first joint in the z axis
         output.jointIndex = 0;
@@ -132,19 +132,19 @@ std::pair<HandJointIndex, FingerParsingFailure> getJointIndex(bool isRightHand, 
         found = true;
     }
     // All other joints are on the y axis
-    if (jointName.find("_proximal") != std::string::npos)
+    if (input.find("_proximal") != std::string::npos)
     {
         output.jointIndex = 0;
         output.angleIndex = 1;
         found = true;
     }
-    if (jointName.find("_middle") != std::string::npos)
+    if (input.find("_middle") != std::string::npos)
     {
         output.jointIndex = 1;
         output.angleIndex = 1;
         found = true;
     }
-    if (jointName.find("_distal") != std::string::npos)
+    if (input.find("_distal") != std::string::npos)
     {
         output.jointIndex = 2;
         output.angleIndex = 1;
