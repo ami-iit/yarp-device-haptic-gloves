@@ -218,6 +218,9 @@ bool SenseGloveHelper::configure(const yarp::os::Searchable& config)
         }
         m_humanJointIndexMap[jointName] = parsed.first;
         m_humanJointNameList.push_back(jointName);
+        yInfo() << LogPrefix << "Parsed joint name: " << jointName << "finger index:" << parsed.first.fingerIndex
+                                                                   << "joint index:" << parsed.first.jointIndex
+                                                                   << "angle index:" << parsed.first.angleIndex;
     }
     yInfo() << LogPrefix << "human joint names: " << m_humanJointNameList;
 
