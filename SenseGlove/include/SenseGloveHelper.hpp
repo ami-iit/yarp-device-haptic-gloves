@@ -187,6 +187,11 @@ public:
     bool getHumanFingerNameList(std::vector<std::string>& fingerList) const;
 
     /**
+     * Get the pose of the SenseGlove hand frame from the tracker frame
+     */
+    Eigen::Matrix4f getTrackerToHandPose() const;
+
+    /**
      * close the device
      * @return true / false in case of connected / disconnected
      */

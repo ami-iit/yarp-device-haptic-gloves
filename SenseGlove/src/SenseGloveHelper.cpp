@@ -508,6 +508,23 @@ bool SenseGloveHelper::getHumanFingerNameList(std::vector<std::string>& fingerLi
     return true;
 }
 
+Eigen::Matrix4f senseGlove::SenseGloveHelper::getTrackerToHandPose() const
+{
+    SGCore::Kinematics::Vect3D outPosition;
+    SGCore::Kinematics::Quat outRotation;
+    SGCore::HandLayer::GetWristLocation(m_isRightHand,
+                                        SGCore::Kinematics::Vect3D::Zero(),
+                                        SGCore::Kinematics::Quat::Identity(),
+                                        SGCore::EPositionalTrackingHardware::ViveTracker,
+                                        outPosition, outRotation);
+    Eigen::Vector3f position(outPosition.GetX(), outPosition.GetY(), outPosition.GetZ());
+    Eigen::Quaternionf rotation(outRotation.GetW(), outRotation.GetX(), outRotation.GetY(), outRotation.GetZ());
+    Eigen::Matrix4f trackerToHandPose = Eigen::Matrix4f::Identity();
+    trackerToHandPose.block<3, 3>(0, 0) = rotation.toRotationMatrix();
+    trackerToHandPose.block<3, 1>(0, 3) = position;
+    return trackerToHandPose;
+}
+
 SenseGloveHelper::~SenseGloveHelper() {}
 
 void SenseGloveHelper::close()
