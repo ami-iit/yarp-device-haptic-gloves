@@ -11,6 +11,7 @@
 
 #include <yarp/os/BufferedPort.h>
 #include <yarp/os/RpcServer.h>
+#include <yarp/dev/IFrameTransform.h>
 
 #include <assert.h>
 #include <cmath>
@@ -89,6 +90,12 @@ public:
     std::string hapticActuatorPrefix;
     class SenseGloveHapticActuator;
     std::vector<SensorPtr<SenseGloveHapticActuator>> sensegloveHapticActuatorVector;
+
+    std::string trackerTransformName;
+    std::string desiredTransformName;
+    yarp::dev::IFrameTransform* frameTransformInterface = nullptr;
+    Eigen::Matrix4f handHDesired = Eigen::Matrix4f::Identity();
+    yarp::sig::Matrix desiredTransform;
 
     // Methods
     SenseGloveImpl();
@@ -201,6 +208,31 @@ bool HapticGlove::SenseGloveImpl::run()
     this->pGlove->setBuzzMotorsReference(this->gloveData.fingersVibroTactileFeedback);
     this->pGlove->setPalmBuzzFeedback(this->gloveData.palmThumperFeedback);
 
+    bool useTransform = this->frameTransformInterface && !this->trackerTransformName.empty() && !this->desiredTransformName.empty();
+
+    if (useTransform)
+    {
+        Eigen::Matrix4f handPose = this->pGlove->getTrackerToHandPose();
+        Eigen::Matrix4f desiredPose = handPose * this->handHDesired;
+        for (size_t i = 0; i < 4; i++)
+        {
+            for (size_t j = 0; j < 4; j++)
+            {
+                this->desiredTransform(i, j) = desiredPose(i, j);
+            }
+        }
+        bool ok = this->frameTransformInterface->setTransformStatic(this->desiredTransformName, this->trackerTransformName, this->desiredTransform);
+        if (!ok)
+        {
+            yError() << LogPrefix << "Failed to set the desired hand transform.";
+        }
+        else
+        {
+            yDebug() << LogPrefix << "Successfully set the desired hand transform.";
+            this->frameTransformInterface = nullptr;
+        }
+    }
+
     return true;
 }
 
@@ -218,6 +250,7 @@ HapticGlove::HapticGlove()
 HapticGlove::~HapticGlove()
 {
     this->stop();
+    this->detach();
 }
 
 bool HapticGlove::open(yarp::os::Searchable& config)
@@ -244,6 +277,35 @@ bool HapticGlove::open(yarp::os::Searchable& config)
     else {
         m_pImpl->wearableName = config.find("wearableName").asString();
         yInfo() << LogPrefix << "Using the wearable name " << m_pImpl->wearableName;
+    }
+
+    m_pImpl->trackerTransformName = config.check("trackerTransformName", yarp::os::Value("")).asString();
+
+    m_pImpl->desiredTransformName = config.check("desiredTransformName", yarp::os::Value("")).asString();
+
+    const std::string handHDesiredStr = "handHDesired";
+    if (config.check(handHDesiredStr))
+    {
+        if (!config.find(handHDesiredStr).isList())
+        {
+            yError() << LogPrefix << "The handHDesired matrix should be a list!";
+            return false;
+        }
+        yarp::os::Bottle* handHDesiredBottle = config.find(handHDesiredStr).asList();
+        if (handHDesiredBottle->size() != 16)
+        {
+            yError() << LogPrefix << "The size of the handHDesired matrix is suposed to be 16! (size:"
+                     << handHDesiredBottle->size() << ")";
+            return false;
+        }
+        for (size_t i = 0; i < 4; i++)
+        {
+            for (size_t j = 0; j < 4; j++)
+            {
+                m_pImpl->handHDesired(i, j) = handHDesiredBottle->get(i * 4 + j).asFloat32();
+            }
+        }
+        m_pImpl->desiredTransform.resize(4, 4);
     }
 
     // Configure the implementation class
@@ -575,6 +637,49 @@ bool HapticGlove::close()
 void HapticGlove::threadRelease()
 {
     m_pImpl->close();
+}
+
+bool wearable::devices::HapticGlove::attach(yarp::dev::PolyDriver* poly)
+{
+    if (!poly) {
+        yError() << LogPrefix << "Passed PolyDriver is nullptr";
+        return false;
+    }
+
+    if (!(poly->view(m_pImpl->frameTransformInterface) && m_pImpl->frameTransformInterface)) {
+        yError() << LogPrefix << "Failed to view the IFrameTransform interface from the PolyDriver";
+        return false;
+    }
+
+    return true;
+}
+
+bool wearable::devices::HapticGlove::detach()
+{
+    m_pImpl->frameTransformInterface = nullptr;
+    return true;
+}
+
+bool wearable::devices::HapticGlove::attachAll(const yarp::dev::PolyDriverList& driverList)
+{
+    if (driverList.size() > 1) {
+        yError() << LogPrefix << "This wrapper accepts only one attached PolyDriver";
+        return false;
+    }
+
+    const yarp::dev::PolyDriverDescriptor* driver = driverList[0];
+
+    if (!driver) {
+        yError() << LogPrefix << "Passed PolyDriverDescriptor is nullptr";
+        return false;
+    }
+
+    return attach(driver->poly);
+}
+
+bool wearable::devices::HapticGlove::detachAll()
+{
+    return detach();
 }
 
 // =========================

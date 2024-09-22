@@ -12,6 +12,8 @@
 #include <yarp/dev/IPreciselyTimed.h>
 #include <yarp/dev/ISerialDevice.h>
 #include <yarp/os/PeriodicThread.h>
+#include <yarp/dev/IWrapper.h>
+#include <yarp/dev/IMultipleWrapper.h>
 
 namespace wearable {
     namespace devices {
@@ -24,6 +26,8 @@ class wearable::devices::HapticGlove
     , public yarp::os::PeriodicThread
     , public yarp::dev::IPreciselyTimed
     , public wearable::IWear
+    , public yarp::dev::IWrapper
+    , public yarp::dev::IMultipleWrapper
 {
 private:
     class SenseGloveImpl;
@@ -40,6 +44,14 @@ public:
     // PeriodicThread
     void run() override;
     void threadRelease() override;
+
+    // IWrapper interface
+    bool attach(yarp::dev::PolyDriver* poly) override;
+    bool detach() override;
+
+    // IMultipleWrapper interface
+    bool attachAll(const yarp::dev::PolyDriverList& driverList) override;
+    bool detachAll() override;
 
     // ================
     // IPRECISELY TIMED
