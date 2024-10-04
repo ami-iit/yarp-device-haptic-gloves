@@ -29,8 +29,17 @@ add_install_rpath_support(BIN_DIRS "${CMAKE_INSTALL_FULL_BINDIR}"
                           INSTALL_NAME_DIR "${CMAKE_INSTALL_FULL_LIBDIR}"
                           USE_LINK_PATH)
 
+find_package(YARP REQUIRED)
+find_package(IWear 1.9.0 REQUIRED)
+find_package(Eigen3 REQUIRED)
+
+
+set(YARP_FORCE_DYNAMIC_PLUGINS ON)
+option(BUILD_SHARED_LIBS "Build libraries as shared as opposed to static" ON)
+
 option(YARP_DEVICE_WEART_GLOVES_ENABLE "Flag that enables building WeArtGloves device" OFF)
 option(YARP_DEVICE_MANUS_GLOVES_ENABLE "Flag that enables building ManusGloves device" OFF)
+option(YARP_DEVICE_SENSE_GLOVES_ENABLE "Flag that enables building SenseGlove device" OFF)
 
 # Flag to enable WeArtGloves device
 if(YARP_DEVICE_WEART_GLOVES_ENABLE)
@@ -40,6 +49,11 @@ endif()
 # Flag to enable ManusGloves device
 if(YARP_DEVICE_MANUS_GLOVES_ENABLE)
     add_subdirectory(ManusGloves)
+endif()
+
+# Flag to enable SenseGlove device
+if(YARP_DEVICE_SENSE_GLOVES_ENABLE)
+    add_subdirectory(SenseGlove)
 endif()
 
 include(AddUninstallTarget)
