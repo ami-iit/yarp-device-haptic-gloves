@@ -221,6 +221,7 @@ bool HapticGlove::SenseGloveImpl::run()
                 this->desiredTransform(i, j) = desiredPose(i, j);
             }
         }
+        this->frameTransformInterface->deleteTransform(this->desiredTransformName, this->trackerTransformName); //delete the transform first since it is static
         bool ok = this->frameTransformInterface->setTransformStatic(this->desiredTransformName, this->trackerTransformName, this->desiredTransform);
         if (!ok)
         {
