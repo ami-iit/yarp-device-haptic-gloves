@@ -21,6 +21,7 @@
 #include <string>
 #include <thread>
 #include <vector>
+#include <sstream>
 
 const std::string DeviceName = "HapticGlove";
 const std::string LogPrefix = DeviceName + wearable::Separator;
@@ -91,6 +92,7 @@ public:
     class SenseGloveHapticActuator;
     std::vector<SensorPtr<SenseGloveHapticActuator>> sensegloveHapticActuatorVector;
 
+    bool framePublishedOnce{ false };
     std::string trackerTransformName;
     std::string desiredTransformName;
     yarp::dev::IFrameTransform* frameTransformInterface = nullptr;
@@ -213,6 +215,7 @@ bool HapticGlove::SenseGloveImpl::run()
     if (useTransform)
     {
         Eigen::Matrix4f handPose = this->pGlove->getTrackerToHandPose();
+
         Eigen::Matrix4f desiredPose = handPose * this->handHDesired;
         for (size_t i = 0; i < 4; i++)
         {
@@ -221,16 +224,29 @@ bool HapticGlove::SenseGloveImpl::run()
                 this->desiredTransform(i, j) = desiredPose(i, j);
             }
         }
-        this->frameTransformInterface->deleteTransform(this->desiredTransformName, this->trackerTransformName); //delete the transform first since it is static
-        bool ok = this->frameTransformInterface->setTransformStatic(this->desiredTransformName, this->trackerTransformName, this->desiredTransform);
+
+        if (!this->framePublishedOnce)
+        {
+            this->frameTransformInterface->deleteTransform(this->desiredTransformName, this->trackerTransformName); //delete the transform first since it is static
+        }
+        bool ok = this->frameTransformInterface->setTransform(this->desiredTransformName, this->trackerTransformName, this->desiredTransform);
         if (!ok)
         {
-            yError() << LogPrefix << "Failed to set the desired hand transform.";
+            yError() << LogPrefix << "Failed to set the transform" << this->desiredTransformName;
         }
         else
         {
-            yDebug() << LogPrefix << "Successfully set the desired hand transform.";
-            this->frameTransformInterface = nullptr;
+            if (!this->framePublishedOnce)
+            {
+                std::stringstream message;
+                message << LogPrefix << "Successfully set the desired hand transform from " << this->trackerTransformName << " to "
+                    << this->desiredTransformName << ": " << std::endl << this->desiredTransform.toString() << std::endl;
+                message << "Hand pose from SenseGlove: " << std::endl << handPose << std::endl;
+                message << "Hand pose transform: " << std::endl << this->handHDesired << std::endl;
+                yDebug() << message.str();
+            }
+
+            this->framePublishedOnce = true;
         }
     }
 
@@ -651,6 +667,8 @@ bool wearable::devices::HapticGlove::attach(yarp::dev::PolyDriver* poly)
         yError() << LogPrefix << "Failed to view the IFrameTransform interface from the PolyDriver";
         return false;
     }
+
+    m_pImpl->framePublishedOnce = false;
 
     return true;
 }
