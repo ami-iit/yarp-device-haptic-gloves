@@ -512,12 +512,28 @@ Eigen::Matrix4f senseGlove::SenseGloveHelper::getTrackerToHandPose() const
 {
     SGCore::Kinematics::Vect3D outPosition;
     SGCore::Kinematics::Quat outRotation;
+
+    Eigen::Matrix3f trackerRotation;
+
+    //Apparently, it seems that SenseGlove assumes a different orientation for the tracker.
+    // This is the orientation of the rotation matrix between a tracker and a focus joystick
+    trackerRotation << 1.0,  0.0,  0.0,
+                       0.0,  0.0,  1.0,
+                       0.0, -1.0,  0.0;
+    Eigen::Quaternionf trackerQuaternionEigen(trackerRotation);
+    SGCore::Kinematics::Quat trackerQuaternion;
+    trackerQuaternion.SetW(trackerQuaternionEigen.w());
+    trackerQuaternion.SetX(trackerQuaternionEigen.x());
+    trackerQuaternion.SetY(trackerQuaternionEigen.y());
+    trackerQuaternion.SetZ(trackerQuaternionEigen.z());
+
+
     SGCore::HandLayer::GetWristLocation(m_isRightHand,
                                         SGCore::Kinematics::Vect3D::Zero(),
-                                        SGCore::Kinematics::Quat::Identity(),
+                                        trackerQuaternion,
                                         SGCore::EPositionalTrackingHardware::ViveTracker,
                                         outPosition, outRotation);
-    Eigen::Vector3f position(outPosition.GetX(), outPosition.GetY(), outPosition.GetZ());
+    Eigen::Vector3f position(outPosition.GetX()/1000.0, outPosition.GetY() / 1000.0, outPosition.GetZ() / 1000.0);
     Eigen::Quaternionf rotation(outRotation.GetW(), outRotation.GetX(), outRotation.GetY(), outRotation.GetZ());
     Eigen::Matrix4f trackerToHandPose = Eigen::Matrix4f::Identity();
     trackerToHandPose.block<3, 3>(0, 0) = rotation.toRotationMatrix();
