@@ -10,10 +10,7 @@ project(YARPWeArtGlove VERSION "0.0.1"
 set(WeArtGloveLibName "WeArtGloveLib")
 set(WeArtGloveDevName "WeArtGlove")
 
-find_package(YARP REQUIRED)                
 find_package(${WeArtGloveLibName} REQUIRED)
-find_package(IWear 1.9.0 REQUIRED)
-find_package(Eigen3 REQUIRED)
 find_package(iDynTree REQUIRED)
 find_package(BipedalLocomotionFramework 0.9.0
   COMPONENTS VectorsCollection IK ParametersHandlerYarpImplementation
