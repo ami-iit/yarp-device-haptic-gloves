@@ -26,7 +26,7 @@
         <param name="desiredTransformName">left_glove</param>
         <param name="handHDesired">( 0.0 -1.0  0.0  0.0
                                     -1.0  0.0  0.0  0.0
-                                     0.0  0.0 -1.0 -0.1
+                                     0.0  0.0 -1.0 -0.05
                                      0.0  0.0  0.0  1.0)</param>
         <action phase="startup" level="3" type="attach">
             <paramlist name="networks">
@@ -74,7 +74,7 @@
         <param name="desiredTransformName">right_glove</param>
         <param name="handHDesired">( 0.0 -1.0  0.0  0.0
                                     -1.0  0.0  0.0  0.0
-                                     0.0  0.0 -1.0 -0.1
+                                     0.0  0.0 -1.0 -0.05
                                      0.0  0.0  0.0  1.0)</param>
         <action phase="startup" level="3" type="attach">
             <paramlist name="networks">
