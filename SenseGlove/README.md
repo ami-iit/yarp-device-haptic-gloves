@@ -1,4 +1,4 @@
-## HapticGlove
+## SenseGlove
 
 Here we are exposing the [SenseGlove SDK](https://github.com/Adjuvo/SenseGlove-API) as a wearable device. This device expose the interfaces in order to stream hand motion data and setting the haptic feedback to the glove through the YARP netwrok.
 
