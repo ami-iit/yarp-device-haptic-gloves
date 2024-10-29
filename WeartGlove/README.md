@@ -1,6 +1,6 @@
 # Instruction on how to install and use the Weart Glove Device
 
-⚠️ This repo can only be installed on Windows.
+⚠️ This device can only be installed on Windows.
 
 ## Dependencies
 
@@ -31,4 +31,4 @@ It is possible to choose the type of tracking algorithm with the `tracking_algor
     - **Simple Closure-based Tracking Algorithm (SCTA)**: This TA uses only closure information reading from a time of flight (ToF) sensor.
 
     - **Advanced Sensor-based Tracking Algorithm (ASTA)**: This TA uses raw sensory information reading from Inertial Measurement Unit (IMU) sensor beside the ToF sensor.
-      :warning: When using ASTA, the URDF model is required. Please make sure to add the path to the directory ``yarp-device-haptic-gloves/WeartGlove/models`` to the `YARP_DATA_DIRS` environmental variable.
+      ⚠️ When using ASTA, the URDF model is required. Please make sure to add the path to the directory ``yarp-device-haptic-gloves/WeartGlove/models`` to the `YARP_DATA_DIRS` environmental variable.
