@@ -43,12 +43,12 @@ option(YARP_DEVICE_SENSE_GLOVES_ENABLE "Flag that enables building SenseGlove de
 
 # Flag to enable WeArtGloves device
 if(YARP_DEVICE_WEART_GLOVES_ENABLE)
-    add_subdirectory(WeartGloves)
+    add_subdirectory(WeartGlove)
 endif()
 
 # Flag to enable ManusGloves device
 if(YARP_DEVICE_MANUS_GLOVES_ENABLE)
-    add_subdirectory(ManusGloves)
+    add_subdirectory(ManusGlove)
 endif()
 
 # Flag to enable SenseGlove device
