@@ -37,9 +37,9 @@ find_package(Eigen3 REQUIRED)
 set(YARP_FORCE_DYNAMIC_PLUGINS ON)
 option(BUILD_SHARED_LIBS "Build libraries as shared as opposed to static" ON)
 
-option(YARP_DEVICE_WEART_GLOVES_ENABLE "Flag that enables building WeArtGlove device" OFF)
-option(YARP_DEVICE_MANUS_GLOVES_ENABLE "Flag that enables building ManusGlove device" OFF)
-option(YARP_DEVICE_SENSE_GLOVES_ENABLE "Flag that enables building SenseGlove device" OFF)
+option(YARP_DEVICE_WEART_GLOVE_ENABLE "Flag that enables building WeArtGlove device" OFF)
+option(YARP_DEVICE_MANUS_GLOVE_ENABLE "Flag that enables building ManusGlove device" OFF)
+option(YARP_DEVICE_SENSE_GLOVE_ENABLE "Flag that enables building SenseGlove device" OFF)
 
 # Flag to enable WeArtGloves device
 if(YARP_DEVICE_WEART_GLOVE_ENABLE)
