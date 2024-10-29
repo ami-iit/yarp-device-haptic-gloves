@@ -20,13 +20,13 @@ git clone https://github.com/Adjuvo/SenseGlove-API
 cd SenseGlove-API
 git checkout v2.102.1
 ```
-In a Linux machine add following environment variable:
+In a Linux machine add the following environment variables:
 
 ```
 export SenseGlove_DIR= <path tho the SenseGlove-API Folder>
 export PATH=${PATH}:${SenseGlove_DIR}/lib/linux/v22/x86-64/<build type(Release or Debug)> 
 ```
-In a Windows machine following environment variable:
+In a Windows machine  add the following environment variables:
 
 ```
 set SenseGlove_DIR= <path tho the SenseGlove-API Folder>
