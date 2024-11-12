@@ -28,6 +28,7 @@
 #include <vector>
 #include <algorithm>
 #include <cstdlib>
+#include <sstream>
 
 #include <Eigen/Dense>
 #include <Eigen/Core>
@@ -61,6 +62,7 @@ public:
 
     // Vector of the human joint names
     std::vector<std::string> humanJointNameList;
+    std::vector<double> jointAxisDirection;
 
     // Vector of the human finger names
     std::vector<std::string> humanFingerNames;
@@ -137,10 +139,36 @@ bool ManusGlove::ManusGloveImpl::open(yarp::os::Searchable& config)
     }
     jointListYarp = config.find("human_joint_list").asList();
 
+    std::stringstream logJointList;
+    logJointList << LogPrefix << "human joint names:" << std::endl;
     for (size_t i = 0; i < jointListYarp->size(); i++) {
-        humanJointNameList.push_back(jointListYarp->get(i).asString());
+        std::string jointName = jointListYarp->get(i).asString();
+
+        //Check that the string is not empty
+        if (jointName.empty()) {
+            yError() << LogPrefix << "Empty string found in the human_joint_list.";
+            return false;
+        }
+
+        //Check if the first character is a '+' or a '-'
+        if (jointName[0] == '+') {
+            jointAxisDirection.push_back(1.0);
+            jointName = jointName.substr(1);
+            logJointList << "+ " << jointName << std::endl;
+        }
+        else if (jointName[0] == '-') {
+            jointAxisDirection.push_back(-1.0);
+            jointName = jointName.substr(1);
+            logJointList << "- " << jointName << std::endl;
+        }
+        else {
+            jointAxisDirection.push_back(1.0);
+            logJointList << "+ " << jointName << std::endl;
+        }
+
+        humanJointNameList.push_back(jointName);
     }
-    yInfo() << LogPrefix << "human joint names: " << humanJointNameList;
+    yInfo() <<logJointList.str().c_str();
 
     // Get human hand link name
     if (!(config.check("hand_link") && config.find("hand_link").isString())) {
@@ -181,7 +209,7 @@ bool ManusGlove::ManusGloveImpl::update()
 
     for (size_t i = 0; i < humanJointState.size(); i++)
     {
-        humanJointState[i] = humanJointState[i] * EIGEN_PI / 180;
+        humanJointState[i] = jointAxisDirection[i] * humanJointState[i] * EIGEN_PI / 180;
     }
 
     return true;
