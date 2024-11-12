@@ -15,17 +15,6 @@
                                      "r_ring_abduction", "r_ring_proximal",   "r_ring_middle",   "r_ring_distal",
                                      "r_pinky_abduction", "r_pinky_proximal",   "r_pinky_middle",   "r_pinky_distal" ) </param>
         <param name="human_finger_list">( "r_thumb_finger", "r_index_finger", "r_middle_finger", "r_ring_finger", "r_little_finger" ) </param>
-        <!--The min_joint_limit and max_joint_limit should be in radians-->
-        <param extern-name="min_joint_limit" name="min_joint_limit">(0.174, 0, 0, 0,
-                                                                        0, 0, 0, 0,
-                                                                        0, 0, 0, 0,
-                                                                        0, 0, 0, 0,
-                                                                        0, 0, 0, 0 )</param>
-        <param extern-name="max_joint_limit" name="max_joint_limit">(1.919, 1.57, 0, 3.14,
-                                                                        0, 1.57, 0, 3.14,
-                                                                        0, 1.57, 0, 3.14,
-                                                                        0, 4.71, 4.71, 4.71,
-                                                                        0, 4.71, 4.71, 4.71 )</param>
         <param name="hand_link">r_hand</param>
     </device>
 

@@ -129,25 +129,6 @@ bool ManusGlove::ManusGloveImpl::open(yarp::os::Searchable& config)
     bool isLocalHost = config.find("is_local_host").asBool();
     hostType = isLocalHost;
 
-    // Get Robot Joint limit
-    // MIN
-    yarp::os::Bottle* robotJointLimitMinYarp;
-    if (!(config.check("min_joint_limit")) || !config.find("min_joint_limit").isList())
-    {
-        yError()<<LogPrefix<<"couldn't find robot joint limits, check the xml file";
-        return false;
-    }
-    robotJointLimitMinYarp = config.find("min_joint_limit").asList();
-
-    // MAX
-    yarp::os::Bottle* robotJointLimitMaxYarp;
-    if (!(config.check("max_joint_limit")) || !config.find("max_joint_limit").isList())
-    {
-        yError()<<LogPrefix<<"couldn't find robot joint limits, check the xml file";
-        return false;
-    }
-    robotJointLimitMaxYarp = config.find("max_joint_limit").asList();
-
     // Get Human Joint Names
     yarp::os::Bottle* jointListYarp;
     if (!(config.check("human_joint_list") && config.find("human_joint_list").isList())) {
