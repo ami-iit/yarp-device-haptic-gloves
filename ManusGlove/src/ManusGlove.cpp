@@ -117,7 +117,7 @@ bool ManusGlove::ManusGloveImpl::open(yarp::os::Searchable& config)
     {
         handSideLogPrefix = "Left";
     }
-    
+
 
     // Choose the host type: Remote/Local
     if (!config.check("is_local_host"))
@@ -414,7 +414,7 @@ bool ManusGlove::close()
         yDebug()<<"Waiting for the thread to stop ";
         yarp::os::Time::delay(1);
 
-    }    
+    }
 
     yDebug()<<"Thread stopped ";
 

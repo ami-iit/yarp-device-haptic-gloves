@@ -143,7 +143,7 @@ public:
      */
     static void OnSystemCallback(const SystemMessage* const p_SystemMessage);
 
-    /** 
+    /**
      * @brief This gets called when receiving ergonomics data from Manus Core.
      * Ergonomics data gets generated and sent when glove data changes, this means that the stream
      * does not always contain ALL of the devices, because some may not have had new data since
@@ -158,14 +158,14 @@ public:
      * @brief @brief Round the given float value so that it has no more than the given number of decimals.
      * @param p_Value given float value
      * @param p_NumDecimalsToKeep number of decimals to keep
-     * @return float 
+     * @return float
      */
     float RoundFloatValue(float p_Value, int p_NumDecimalsToKeep);
 
     /**
      * @brief Convert Device Class Type To String
-     * @param p_Type 
-     * @return std::string 
+     * @param p_Type
+     * @return std::string
      */
     std::string ConvertDeviceClassTypeToString(DeviceClassType p_Type);
 
@@ -178,9 +178,9 @@ public:
 
     /**
      * @brief Copy the given string into the given target.
-     * 
+     *
      * @param p_Target Given Target
-     * @param p_MaxLengthThatWillFitInTarget 
+     * @param p_MaxLengthThatWillFitInTarget
      * @param p_Source Given String
      * @return true true if it is successful
      */
@@ -188,7 +188,7 @@ public:
 
     /**
      * @brief Gets the hand joint angles (in radians) from the Manus gloves.
-     * 
+     *
      * @param jointAngleList
      * @param p_leftSide - true: Left hand, false: Right hand
      * @return true if it is successful
@@ -289,15 +289,15 @@ protected:
 
     /**
      * Skeletons are pretty extensive in their data setup
-     * so we have several support functions so we can correctly receive and parse the data, 
+     * so we have several support functions so we can correctly receive and parse the data,
      * this function helps setup the data.
      * @param p_Id the id of the created node setup
      * @param p_ParentId the id of the node parent
-     * @param p_PosX X position of the node, this is defined with respect to the global coordinate system or the local one depending on 
+     * @param p_PosX X position of the node, this is defined with respect to the global coordinate system or the local one depending on
      * the parameter p_UseWorldCoordinates set when initializing the sdk,
-     * @param p_PosY Y position of the node this is defined with respect to the global coordinate system or the local one depending on 
+     * @param p_PosY Y position of the node this is defined with respect to the global coordinate system or the local one depending on
      * the parameter p_UseWorldCoordinates set when initializing the sdk,
-     * @param p_PosZ Z position of the node this is defined with respect to the global coordinate system or the local one depending on 
+     * @param p_PosZ Z position of the node this is defined with respect to the global coordinate system or the local one depending on
      * the parameter p_UseWorldCoordinates set when initializing the sdk,
      * @param p_Name the name of the node setup
      * @return the generated node setup
@@ -305,7 +305,7 @@ protected:
     NodeSetup CreateNodeSetup(uint32_t p_Id, uint32_t p_ParentId, float p_PosX, float p_PosY, float p_PosZ, std::string p_Name);
 
     /**
-     * 
+     *
      */
     static ManusVec3 CreateManusVec3(float p_X, float p_Y, float p_Z);
 

@@ -531,10 +531,10 @@ void ManusGloveHelper::PrintHandErgoData(ErgonomicsData &p_ErgoData, bool p_Left
     const std::string *t_JointNames = t_ThumbJointNames;
     for (unsigned int t_FingerNumber = 0; t_FingerNumber < NUM_FINGERS_ON_HAND; t_FingerNumber++)
     {
-        yInfo() << ManusGlove_LogPrefix << t_FingerNames[t_FingerNumber] << " " << t_JointNames[0] << " spread: " << 
-        RoundFloatValue(p_ErgoData.data[t_DataOffset], 2) << " " << t_JointNames[0] << " stretch: " << 
-        RoundFloatValue(p_ErgoData.data[t_DataOffset + 1], 2) << " " << t_JointNames[1] << " stretch: " << 
-        RoundFloatValue(p_ErgoData.data[t_DataOffset + 2], 2) << " " << t_JointNames[2] << " stretch: " << 
+        yInfo() << ManusGlove_LogPrefix << t_FingerNames[t_FingerNumber] << " " << t_JointNames[0] << " spread: " <<
+        RoundFloatValue(p_ErgoData.data[t_DataOffset], 2) << " " << t_JointNames[0] << " stretch: " <<
+        RoundFloatValue(p_ErgoData.data[t_DataOffset + 1], 2) << " " << t_JointNames[1] << " stretch: " <<
+        RoundFloatValue(p_ErgoData.data[t_DataOffset + 2], 2) << " " << t_JointNames[2] << " stretch: " <<
         RoundFloatValue(p_ErgoData.data[t_DataOffset + 3], 2);
 
         t_JointNames = t_FingerJointNames;
