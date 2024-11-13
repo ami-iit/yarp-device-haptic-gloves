@@ -7,6 +7,7 @@
  */
 
 #include <ManusGloveHelper.h>
+#include <unordered_map>
 
 using namespace manusGlove;
 using namespace std;
@@ -61,6 +62,7 @@ bool ManusGloveHelper::Initialize(bool p_hostType)
 
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
     PrintDongleData();
+    m_startupTime = yarp::os::Time::now();
 
     return true;
 }
@@ -216,6 +218,95 @@ ManusVec3 ManusGloveHelper::CreateManusVec3(float p_X, float p_Y, float p_Z)
     t_Vec.y = p_Y;
     t_Vec.z = p_Z;
     return t_Vec;
+}
+
+bool manusGlove::ManusGloveHelper::SetHandJoints(const std::vector<std::string>& p_JointNames, bool p_leftSide)
+{
+    std::vector<std::string> failures;
+
+    std::unordered_map<std::string, ErgonomicsDataType> leftFingersMap = {
+        {"l_thumb_oppose",    ErgonomicsDataType_LeftFingerThumbMCPSpread},
+        {"l_thumb_proximal",  ErgonomicsDataType_LeftFingerThumbMCPStretch},
+        {"l_thumb_middle",    ErgonomicsDataType_LeftFingerThumbPIPStretch},
+        {"l_thumb_distal",    ErgonomicsDataType_LeftFingerThumbDIPStretch},
+        {"l_index_abduction", ErgonomicsDataType_LeftFingerIndexMCPSpread},
+        {"l_index_proximal",  ErgonomicsDataType_LeftFingerIndexMCPStretch},
+        {"l_index_middle",    ErgonomicsDataType_LeftFingerIndexPIPStretch},
+        {"l_index_distal",    ErgonomicsDataType_LeftFingerIndexDIPStretch},
+        {"l_middle_abduction",ErgonomicsDataType_LeftFingerMiddleMCPSpread},
+        {"l_middle_proximal", ErgonomicsDataType_LeftFingerMiddleMCPStretch},
+        {"l_middle_middle",   ErgonomicsDataType_LeftFingerMiddlePIPStretch},
+        {"l_middle_distal",   ErgonomicsDataType_LeftFingerMiddleDIPStretch},
+        {"l_ring_abduction",  ErgonomicsDataType_LeftFingerRingMCPSpread},
+        {"l_ring_proximal",   ErgonomicsDataType_LeftFingerRingMCPStretch},
+        {"l_ring_middle",     ErgonomicsDataType_LeftFingerRingPIPStretch},
+        {"l_ring_distal",     ErgonomicsDataType_LeftFingerRingDIPStretch},
+        {"l_pinky_abduction", ErgonomicsDataType_LeftFingerPinkyMCPSpread},
+        {"l_pinky_proximal",  ErgonomicsDataType_LeftFingerPinkyMCPStretch},
+        {"l_pinky_middle",    ErgonomicsDataType_LeftFingerPinkyPIPStretch},
+        {"l_pinky_distal",    ErgonomicsDataType_LeftFingerPinkyDIPStretch}};
+
+    std::unordered_map<std::string, ErgonomicsDataType> rightFingersMap = {
+        {"r_thumb_oppose",    ErgonomicsDataType_RightFingerThumbMCPSpread},
+        {"r_thumb_proximal",  ErgonomicsDataType_RightFingerThumbMCPStretch},
+        {"r_thumb_middle",    ErgonomicsDataType_RightFingerThumbPIPStretch},
+        {"r_thumb_distal",    ErgonomicsDataType_RightFingerThumbDIPStretch},
+        {"r_index_abduction", ErgonomicsDataType_RightFingerIndexMCPSpread},
+        {"r_index_proximal",  ErgonomicsDataType_RightFingerIndexMCPStretch},
+        {"r_index_middle",    ErgonomicsDataType_RightFingerIndexPIPStretch},
+        {"r_index_distal",    ErgonomicsDataType_RightFingerIndexDIPStretch},
+        {"r_middle_abduction",ErgonomicsDataType_RightFingerMiddleMCPSpread},
+        {"r_middle_proximal", ErgonomicsDataType_RightFingerMiddleMCPStretch},
+        {"r_middle_middle",   ErgonomicsDataType_RightFingerMiddlePIPStretch},
+        {"r_middle_distal",   ErgonomicsDataType_RightFingerMiddleDIPStretch},
+        {"r_ring_abduction",  ErgonomicsDataType_RightFingerRingMCPSpread},
+        {"r_ring_proximal",   ErgonomicsDataType_RightFingerRingMCPStretch},
+        {"r_ring_middle",     ErgonomicsDataType_RightFingerRingPIPStretch},
+        {"r_ring_distal",     ErgonomicsDataType_RightFingerRingDIPStretch},
+        {"r_pinky_abduction", ErgonomicsDataType_RightFingerPinkyMCPSpread},
+        {"r_pinky_proximal",  ErgonomicsDataType_RightFingerPinkyMCPStretch},
+        {"r_pinky_middle",    ErgonomicsDataType_RightFingerPinkyPIPStretch},
+        {"r_pinky_distal",    ErgonomicsDataType_RightFingerPinkyDIPStretch}};
+
+    for (const auto& jointName : p_JointNames)
+    {
+        if (p_leftSide)
+        {
+            auto it = leftFingersMap.find(jointName);
+            if (it != leftFingersMap.end())
+            {
+                m_Joints.push_back(it->second);
+            }
+            else
+            {
+                failures.push_back(jointName);
+            }
+        }
+        else
+        {
+            auto it = rightFingersMap.find(jointName);
+            if (it != rightFingersMap.end())
+            {
+                m_Joints.push_back(it->second);
+            }
+            else
+            {
+                failures.push_back(jointName);
+            }
+        }
+    }
+
+    if (!failures.empty())
+    {
+        std::string hand_name = p_leftSide ? "left" : "right";
+        yError() << ManusGlove_LogPrefix << "Failed to find the following joints in the" << hand_name <<"hand: ";
+        for (const auto& failure : failures)
+        {
+            yError() << ManusGlove_LogPrefix << failure;
+        }
+        return false;
+    }
+    return true;
 }
 
 bool ManusGloveHelper::SetupHandNodes(uint32_t p_SklIndex)
@@ -524,7 +615,7 @@ void ManusGloveHelper::PrintHandErgoData(ErgonomicsData &p_ErgoData, bool p_Left
     const std::string t_FingerJointNames[NUM_FINGERS_ON_HAND] = {"mcp", "pip", "dip"};
     const std::string t_ThumbJointNames[NUM_FINGERS_ON_HAND] = {"cmc", "mcp", "ip "};
 
-    t_DataOffset = 0;
+    int t_DataOffset = 0;
     if (!p_Left)
         t_DataOffset = 20;
 
@@ -800,48 +891,20 @@ bool ManusGloveHelper::getHandJointPosition(std::vector<double>& jointAngleList,
         return false;
     }
 
-    switch (p_handSide)
+    jointAngleList.resize(m_Joints.size());
+
+    //Provide 0 values for the first 3 seconds since the data coming from the SDK might not be reliable
+    if (yarp::os::Time::now() - m_startupTime < 3)
     {
-    case false:
-        j_DataOffset = 0;
-        t_DataOffset = 0;
-        for (unsigned int t_FingerNumber = 0; t_FingerNumber < NUM_FINGERS_ON_HAND; t_FingerNumber++)
-        {
-            jointAngleList[t_FingerNumber + j_DataOffset] = RoundFloatValue(s_Instance->m_LeftGloveErgoData.data[t_DataOffset], 2);
-            jointAngleList[t_FingerNumber + j_DataOffset + 1] = RoundFloatValue(s_Instance->m_LeftGloveErgoData.data[t_DataOffset + 1], 2);
-            jointAngleList[t_FingerNumber + j_DataOffset + 2] = RoundFloatValue(s_Instance->m_LeftGloveErgoData.data[t_DataOffset + 2], 2);
-            jointAngleList[t_FingerNumber + j_DataOffset + 3] = RoundFloatValue(s_Instance->m_LeftGloveErgoData.data[t_DataOffset + 3], 2);
+        std::fill(jointAngleList.begin(), jointAngleList.end(), 0);
+        return true;
+    }
 
-            t_DataOffset += 4;
-            j_DataOffset += 3;
-        }
-        if (*t_counter < 3)
-        {
-            std::this_thread::sleep_for(std::chrono::seconds(1));
-            std::fill(jointAngleList.begin(), jointAngleList.end(), 0);
-        }
-        (*t_counter)++;
-        break;
-    case true:
-        j_DataOffset = 0;
-        t_DataOffset = 20;
-        for (unsigned int t_FingerNumber = 0; t_FingerNumber < NUM_FINGERS_ON_HAND; t_FingerNumber++)
-        {
-            jointAngleList[t_FingerNumber + j_DataOffset] = RoundFloatValue(s_Instance->m_RightGloveErgoData.data[t_DataOffset], 2);
-            jointAngleList[t_FingerNumber + j_DataOffset + 1] = RoundFloatValue(s_Instance->m_RightGloveErgoData.data[t_DataOffset + 1], 2);
-            jointAngleList[t_FingerNumber + j_DataOffset + 2] = RoundFloatValue(s_Instance->m_RightGloveErgoData.data[t_DataOffset + 2], 2);
-            jointAngleList[t_FingerNumber + j_DataOffset + 3] = RoundFloatValue(s_Instance->m_RightGloveErgoData.data[t_DataOffset + 3], 2);
+    float* data = p_handSide ? s_Instance->m_RightGloveErgoData.data : s_Instance->m_LeftGloveErgoData.data;
 
-            t_DataOffset += 4;
-            j_DataOffset += 3;
-        }
-        if (*t_counter < 3)
-        {
-            std::this_thread::sleep_for(std::chrono::seconds(1));
-            std::fill(jointAngleList.begin(), jointAngleList.end(), 0);
-        }
-        (*t_counter)++;
-        break;
+    for (size_t i = 0; i < m_Joints.size(); i++)
+    {
+        jointAngleList[i] = RoundFloatValue(data[m_Joints[i]], 2);
     }
 
     return true;

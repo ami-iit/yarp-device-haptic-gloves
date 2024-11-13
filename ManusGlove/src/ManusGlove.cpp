@@ -195,6 +195,13 @@ bool ManusGlove::ManusGloveImpl::open(yarp::os::Searchable& config)
 
 // TODO: Add a check if there is no glove connected!
     pGlove->Initialize(hostType);
+
+    if (!pGlove->SetHandJoints(humanJointNameList, handSide))
+    {
+        yError() << LogPrefix << "Failed to set the hand joints.";
+        return false;
+    }
+
     humanJointState.resize(humanJointNameList.size(), 0);
 
     return true;

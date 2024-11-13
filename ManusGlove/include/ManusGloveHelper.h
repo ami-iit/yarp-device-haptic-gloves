@@ -187,13 +187,20 @@ public:
     bool CopyString(char *const p_Target, const size_t p_MaxLengthThatWillFitInTarget, const std::string &p_Source);
 
     /**
-     * @brief Gets the hand joint angles (in radians) from the Manus gloves.
+     * @brief Gets the hand joint angles (in degrees) from the Manus gloves.
      *
      * @param jointAngleList
-     * @param p_leftSide - true: Left hand, false: Right hand
+     * @param p_leftSide - false: Left hand, true: Right hand
      * @return true if it is successful
      */
     bool getHandJointPosition(std::vector<double>& jointAngleList, bool p_leftSide);
+
+
+    /**
+     * Specify the hand joints that you want to get the position of.
+     * @param p_leftSide - false: Left hand, true: Right hand
+     */
+    bool SetHandJoints(const std::vector<std::string>& p_JointNames, bool p_leftSide);
 
     //===================================================================================================================================================================================
 
@@ -333,10 +340,6 @@ protected:
     //Data
     uint32_t m_SessionId = 0;
 
-    int t_DataOffset = 0;
-    int j_DataOffset = 0;
-    std::shared_ptr<int> t_counter = std::make_shared<int>(0);
-
     std::vector<uint32_t> m_LoadedSkeletons;
 
     std::chrono::time_point<std::chrono::high_resolution_clock> m_TimeSinceLastDisconnect;
@@ -360,5 +363,9 @@ protected:
     uint32_t m_ModifiedSkeletonIndex = UINT_MAX;
 
     uint32_t m_FrameCounter = 0;
+
+    std::vector<ErgonomicsDataType> m_Joints;
+
+    double m_startupTime = 0.0;
 };
 #endif
