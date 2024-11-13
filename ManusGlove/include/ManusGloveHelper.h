@@ -350,7 +350,6 @@ protected:
     ManusTimestampInfo m_ErgoTimestampInfo;
     ErgonomicsData m_LeftGloveErgoData;
     ErgonomicsData m_RightGloveErgoData;
-    ErgonomicsData m_HandSideErgoData;
 
     uint32_t m_FirstLeftGloveID = 0;
     uint32_t m_FirstRightGloveID = 0;
