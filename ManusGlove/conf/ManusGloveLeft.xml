@@ -5,7 +5,7 @@
 
     <!--Left HapticGlove Device-->
     <device type="ManusGlove" name="LeftHapticGloveWearableDevice">
-        <param extern-name="period" name="period">1.0</param>
+        <param extern-name="period" name="period">0.03</param>
         <param name="wearableName">HapticGlove</param>
         <param name="is_right_hand">false</param>
         <param name="is_local_host">true</param>
@@ -19,7 +19,7 @@
     </device>
 
     <device type="iwear_wrapper" name="LeftHapticGloveWearableDeviceWrapper">
-        <param name="period">0.01</param>
+        <param name="period">0.03</param>
         <param name="dataPortName">/WearableData/HapticGlove/LeftHand/data:o</param>
         <param name="rpcPortName">/WearableData/HapticGlove/LeftHand/metadataRpc:o</param>
         <action phase="startup" level="5" type="attach">
@@ -31,7 +31,7 @@
     </device>
 
     <device type="iwearactuators_wrapper" name="LeftHapticGloveWearableDeviceActuatorsWrapper">
-        <param name="period">0.01</param>
+        <param name="period">0.03</param>
         <param name="actuatorCommandInputPortName">/WearableData/HapticGlove/LeftHand/Actuators/input:i</param>
         <action phase="startup" level="5" type="attach">
             <paramlist name="networks">
