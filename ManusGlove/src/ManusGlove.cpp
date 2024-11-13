@@ -228,9 +228,9 @@ bool ManusGlove::ManusGloveImpl::open(yarp::os::Searchable& config)
             couplingMatrix(i, j) = couplingMatrixYarp->get(i * humanJointNameList.size() + j).asFloat64();
         }
     }
-    std::stringstream ss;
-    ss << std::endl << couplingMatrix;
-    yInfo() << LogPrefix << "coupling matrix: " << ss.str();
+    std::stringstream ss_matrix;
+    ss_matrix << std::endl << couplingMatrix;
+    yInfo() << LogPrefix << "coupling matrix: " << ss_matrix.str();
 
     //Parse the offset vector
     yarp::os::Bottle* offsetVectorYarp;
@@ -250,9 +250,9 @@ bool ManusGlove::ManusGloveImpl::open(yarp::os::Searchable& config)
     {
         offsetVector(i) = offsetVectorYarp->get(i).asFloat64();
     }
-    ss.clear();
-    ss << std::endl << offsetVector;
-    yInfo() << LogPrefix << "offset vector: " << ss.str();
+    std::stringstream ss_vector;
+    ss_vector << std::endl << offsetVector;
+    yInfo() << LogPrefix << "offset vector: " << ss_vector.str();
 
 // TODO: Add a check if there is no glove connected!
     pGlove->Initialize(hostType);

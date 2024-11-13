@@ -272,8 +272,8 @@ bool manusGlove::ManusGloveHelper::SetHandJoints(const std::vector<std::string>&
     {
         if (p_leftSide)
         {
-            auto it = leftFingersMap.find(jointName);
-            if (it != leftFingersMap.end())
+            auto it = rightFingersMap.find(jointName);
+            if (it != rightFingersMap.end())
             {
                 m_Joints.push_back(it->second);
             }
@@ -284,8 +284,8 @@ bool manusGlove::ManusGloveHelper::SetHandJoints(const std::vector<std::string>&
         }
         else
         {
-            auto it = rightFingersMap.find(jointName);
-            if (it != rightFingersMap.end())
+            auto it = leftFingersMap.find(jointName);
+            if (it != leftFingersMap.end())
             {
                 m_Joints.push_back(it->second);
             }
