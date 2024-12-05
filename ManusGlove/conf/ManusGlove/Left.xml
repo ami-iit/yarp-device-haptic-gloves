@@ -1,9 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<!DOCTYPE robot PUBLIC "-//YARP//DTD yarprobotinterface 3.0//EN" "http://www.yarp.it/DTD/yarprobotinterfaceV3.0.dtd">
-<robot name="SenseGloveWearableDevice" build=0 portprefix="">
-<!--Following the example in https://github.com/robotology/robots-configuration/blob/devel/experimentalSetups/battery/hardware/battery/icubbattery.xml-->
+<!DOCTYPE devices PUBLIC "-//YARP//DTD yarprobotinterface 3.0//EN" "http://www.yarp.it/DTD/yarprobotinterfaceV3.0.dtd">
 
-    <!--Left HapticGlove Device-->
+<devices>
     <device type="ManusGlove" name="LeftHapticGloveWearableDevice">
         <param extern-name="period" name="period">0.03</param>
         <param name="wearableName">HapticGlove</param>
@@ -18,18 +16,18 @@
         <param name="hand_link">l_hand</param>
         <!--The min_joint_limit and max_joint_limit should be in degrees-->
         <param name="min_joint_limit_deg">
-            (-90.0, 0.0, 0.0, 0.0,
-               0.0, 0.0, 0.0, 0.0,
-               0.0, 0.0, 0.0, 0.0,
-               0.0, 0.0, 0.0, 0.0,
-               0.0, 0.0, 0.0, 0.0 )
+            (-90.0,  0.0,  0.0,  0.0,
+               0.0,  0.0,  0.0,  0.0,
+               0.0,  0.0,  0.0,  0.0,
+               0.0,  0.0,  0.0,  0.0,
+               0.0,  0.0,  0.0,  0.0 )
         </param>
         <param name="max_joint_limit_deg">
-            ( 0.0, 90.0, 90.0, 90.0,
-             90.0, 90.0, 90.0, 90.0,
-             90.0, 90.0, 90.0, 90.0,
-             90.0, 90.0, 90.0, 90.0,
-             90.0, 90.0, 90.0, 90.0 )
+            (  0.0, 90.0, 90.0, 90.0,
+              90.0, 90.0, 90.0, 90.0,
+              90.0, 90.0, 90.0, 90.0,
+              90.0, 90.0, 90.0, 90.0,
+              90.0, 90.0, 90.0, 90.0 )
         </param>
         <param name="coupling_matrix">
             ( 0.0, 2.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
@@ -56,25 +54,25 @@
 
         <param name="offset_vector_deg">
             (-100.0
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0)
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0)
         </param>
     </device>
 
@@ -100,4 +98,4 @@
         </action>
         <action phase="shutdown" level="4" type="detach"/>
     </device>
-</robot>
+</devices>
