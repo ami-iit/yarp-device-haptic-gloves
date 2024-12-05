@@ -220,7 +220,7 @@ ManusVec3 ManusGloveHelper::CreateManusVec3(float p_X, float p_Y, float p_Z)
     return t_Vec;
 }
 
-bool manusGlove::ManusGloveHelper::SetHandJoints(const std::vector<std::string>& p_JointNames, bool p_leftSide)
+bool manusGlove::ManusGloveHelper::SetHandJoints(const std::vector<std::string>& p_JointNames, bool p_isRightHand)
 {
     std::vector<std::string> failures;
 
@@ -270,7 +270,7 @@ bool manusGlove::ManusGloveHelper::SetHandJoints(const std::vector<std::string>&
 
     for (const auto& jointName : p_JointNames)
     {
-        if (p_leftSide)
+        if (p_isRightHand)
         {
             auto it = rightFingersMap.find(jointName);
             if (it != rightFingersMap.end())
@@ -298,7 +298,7 @@ bool manusGlove::ManusGloveHelper::SetHandJoints(const std::vector<std::string>&
 
     if (!failures.empty())
     {
-        std::string hand_name = p_leftSide ? "left" : "right";
+        std::string hand_name = p_isRightHand ? "right" : "left";
         yError() << ManusGlove_LogPrefix << "Failed to find the following joints in the" << hand_name <<"hand: ";
         for (const auto& failure : failures)
         {
@@ -882,7 +882,7 @@ bool ManusGloveHelper::CopyString(char *const p_Target, const size_t p_MaxLength
     return true;
 }
 
-bool ManusGloveHelper::getHandJointPosition(std::vector<double>& jointAngleList, bool p_handSide)
+bool ManusGloveHelper::getHandJointPosition(std::vector<double>& jointAngleList, bool p_isRightHand)
 {
 
     if (!UpdateBeforeDisplayingData())
@@ -900,7 +900,7 @@ bool ManusGloveHelper::getHandJointPosition(std::vector<double>& jointAngleList,
         return true;
     }
 
-    float* data = p_handSide ? s_Instance->m_RightGloveErgoData.data : s_Instance->m_LeftGloveErgoData.data;
+    float* data = p_isRightHand ? s_Instance->m_RightGloveErgoData.data : s_Instance->m_LeftGloveErgoData.data;
 
     for (size_t i = 0; i < m_Joints.size(); i++)
     {

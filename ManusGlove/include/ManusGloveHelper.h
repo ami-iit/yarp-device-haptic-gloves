@@ -190,17 +190,17 @@ public:
      * @brief Gets the hand joint angles (in degrees) from the Manus gloves.
      *
      * @param jointAngleList
-     * @param p_leftSide - false: Left hand, true: Right hand
+     * @param p_isRightHand - true: Right hand, false: Left hand
      * @return true if it is successful
      */
-    bool getHandJointPosition(std::vector<double>& jointAngleList, bool p_leftSide);
+    bool getHandJointPosition(std::vector<double>& jointAngleList, bool p_isRightHand);
 
 
     /**
      * Specify the hand joints that you want to get the position of.
-     * @param p_leftSide - false: Left hand, true: Right hand
+     * @param p_isRightHand - true: Right hand, false: Left hand
      */
-    bool SetHandJoints(const std::vector<std::string>& p_JointNames, bool p_leftSide);
+    bool SetHandJoints(const std::vector<std::string>& p_JointNames, bool p_isRightHand);
 
     //===================================================================================================================================================================================
 
