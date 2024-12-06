@@ -135,7 +135,7 @@ public:
     Eigen::VectorXd MIN_JOINT_LIMIT = Eigen::VectorXd::Zero(20);
     Eigen::VectorXd MAX_JOINT_LIMIT = Eigen::VectorXd::Zero(20);
     Eigen::VectorXd upperLimits;
-    Eigen::VectorXd lowerLimits; 
+    Eigen::VectorXd lowerLimits;
 
     Eigen::MatrixXd weartRawDataAcc = Eigen::MatrixXd::Zero(4,3);
     Eigen::MatrixXd weartRawDataGyro = Eigen::MatrixXd::Zero(4,3);
@@ -383,7 +383,7 @@ bool WeArtGlove::WeArtGloveImpl::open(yarp::os::Searchable& config)
     {
         yWarning()<<LogPrefix<<"couldn't find temperature feedback, setting use_temperature_feedback as default value";
     }
-    else 
+    else
     {
         useTemperatureFeedBack = config.find("use_temperature_feedback").asBool();
     }
@@ -411,7 +411,7 @@ bool WeArtGlove::WeArtGloveImpl::open(yarp::os::Searchable& config)
             yError()<<LogPrefix<<"textureId should be between 0 and 21";
             return false;
         }
-        
+
         textureId = (TextureType) textureIdParam;
         yInfo()<<LogPrefix<<"textureId is:"<<textureIdParam;
     }
@@ -421,14 +421,14 @@ bool WeArtGlove::WeArtGloveImpl::open(yarp::os::Searchable& config)
     {
         yWarning()<<LogPrefix<<"couldn't find smoothing factor (alpha), setting smoothing_factor as default value"<< alpha;
     }
-    else 
+    else
     {
         alpha = config.find("smoothing_factor").asFloat64();
         if (alpha <= 0 || alpha > 1)
         {
             yError()<<LogPrefix<<"smoothing factor is not acceptable"<<alpha;
             return false;
-        }    
+        }
     }
 
     // Get finger length
@@ -436,7 +436,7 @@ bool WeArtGlove::WeArtGloveImpl::open(yarp::os::Searchable& config)
     {
         yWarning()<<LogPrefix<<"couldn't find finger length, setting finger_length as default value"<< fingerLength;
     }
-    else 
+    else
     {
         fingerLength = config.find("finger_length_mm").asFloat64();
         if (fingerLength <= 0)
@@ -1190,7 +1190,7 @@ public:
 
 private:
     WeArtGlove::WeArtGloveImpl* gloveImpl{nullptr};
-    std::shared_ptr<ThimbleEffect> thimbleEffect; 
+    std::shared_ptr<ThimbleEffect> thimbleEffect;
 };
 
 // ==================================================
@@ -1212,7 +1212,7 @@ bool WeArtGlove::close()
         yDebug()<<"Waiting for the thread to stop ";
         yarp::os::Time::delay(1);
 
-    }    
+    }
 
     yDebug()<<"Thread stopped ";
 

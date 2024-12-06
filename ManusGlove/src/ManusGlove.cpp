@@ -28,6 +28,7 @@
 #include <vector>
 #include <algorithm>
 #include <cstdlib>
+#include <sstream>
 
 #include <Eigen/Dense>
 #include <Eigen/Core>
@@ -54,7 +55,7 @@ public:
 
     bool hostType;
 
-    std::vector<double> humanJointState;
+    std::vector<double> humanJointState, humanJointStateDeg;
 
     //Pointer to the glove object.
     std::unique_ptr<manusGlove::ManusGloveHelper> pGlove; /**< Pointer to the glove object. */
@@ -67,6 +68,10 @@ public:
 
     // The name of the human hand link name
     std::string humanHandLinkName;
+
+    std::vector<std::pair<double, double>> jointLimits;
+    Eigen::MatrixXd couplingMatrix;
+    Eigen::VectorXd offsetVector;
 
     // Link Sensor
     std::string linkSensorPrefix;
@@ -117,7 +122,7 @@ bool ManusGlove::ManusGloveImpl::open(yarp::os::Searchable& config)
     {
         handSideLogPrefix = "Left";
     }
-    
+
 
     // Choose the host type: Remote/Local
     if (!config.check("is_local_host"))
@@ -128,25 +133,6 @@ bool ManusGlove::ManusGloveImpl::open(yarp::os::Searchable& config)
 
     bool isLocalHost = config.find("is_local_host").asBool();
     hostType = isLocalHost;
-
-    // Get Robot Joint limit
-    // MIN
-    yarp::os::Bottle* robotJointLimitMinYarp;
-    if (!(config.check("min_joint_limit")) || !config.find("min_joint_limit").isList())
-    {
-        yError()<<LogPrefix<<"couldn't find robot joint limits, check the xml file";
-        return false;
-    }
-    robotJointLimitMinYarp = config.find("min_joint_limit").asList();
-
-    // MAX
-    yarp::os::Bottle* robotJointLimitMaxYarp;
-    if (!(config.check("max_joint_limit")) || !config.find("max_joint_limit").isList())
-    {
-        yError()<<LogPrefix<<"couldn't find robot joint limits, check the xml file";
-        return false;
-    }
-    robotJointLimitMaxYarp = config.find("max_joint_limit").asList();
 
     // Get Human Joint Names
     yarp::os::Bottle* jointListYarp;
@@ -184,9 +170,101 @@ bool ManusGlove::ManusGloveImpl::open(yarp::os::Searchable& config)
     }
     yInfo() << LogPrefix << "human finger names: " << humanFingerNames;
 
+
+    // Get Robot Joint limit
+    // MIN
+    yarp::os::Bottle* robotJointLimitMinYarp;
+    if (!(config.check("min_joint_limit_deg")) || !config.find("min_joint_limit_deg").isList())
+    {
+        yError()<<LogPrefix<<"couldn't find min_joint_limit_deg.";
+        return false;
+    }
+    robotJointLimitMinYarp = config.find("min_joint_limit_deg").asList();
+
+    if (robotJointLimitMinYarp->size() != humanJointNameList.size())
+    {
+        yError() << LogPrefix << "min_joint_limit_deg size is not equal to human_joint_list size.";
+        return false;
+    }
+
+    // MAX
+    yarp::os::Bottle* robotJointLimitMaxYarp;
+    if (!(config.check("max_joint_limit_deg")) || !config.find("max_joint_limit_deg").isList())
+    {
+        yError()<<LogPrefix<<"couldn't find max_joint_limit_deg.";
+        return false;
+    }
+    robotJointLimitMaxYarp = config.find("max_joint_limit_deg").asList();
+
+    if (robotJointLimitMaxYarp->size() != humanJointNameList.size())
+    {
+        yError() << LogPrefix << "max_joint_limit_deg size is not equal to human_joint_list size.";
+        return false;
+    }
+
+    for (size_t i = 0; i < humanJointNameList.size(); i++)
+    {
+        jointLimits.push_back(std::make_pair(robotJointLimitMinYarp->get(i).asFloat64(), robotJointLimitMaxYarp->get(i).asFloat64()));
+    }
+
+    //Parse the coupling matrix
+    yarp::os::Bottle* couplingMatrixYarp;
+    if (!(config.check("coupling_matrix")) || !config.find("coupling_matrix").isList())
+    {
+        yError() << LogPrefix << "couldn't find coupling_matrix.";
+        return false;
+    }
+    couplingMatrixYarp = config.find("coupling_matrix").asList();
+    if (couplingMatrixYarp->size() != humanJointNameList.size() * humanJointNameList.size())
+    {
+        yError() << LogPrefix << "coupling_matrix size is supposed to be a square matrix with number of rows/cols equal to the number of joints.";
+        return false;
+    }
+    couplingMatrix.resize(humanJointNameList.size(), humanJointNameList.size());
+    for (size_t i = 0; i < humanJointNameList.size(); i++)
+    {
+        for (size_t j = 0; j < humanJointNameList.size(); j++)
+        {
+            couplingMatrix(i, j) = couplingMatrixYarp->get(i * humanJointNameList.size() + j).asFloat64();
+        }
+    }
+    std::stringstream ss_matrix;
+    ss_matrix << std::endl << couplingMatrix;
+    yInfo() << LogPrefix << "coupling matrix: " << ss_matrix.str();
+
+    //Parse the offset vector
+    yarp::os::Bottle* offsetVectorYarp;
+    if (!(config.check("offset_vector_deg")) || !config.find("offset_vector_deg").isList())
+    {
+        yError() << LogPrefix << "couldn't find offset_vector_deg.";
+        return false;
+    }
+    offsetVectorYarp = config.find("offset_vector_deg").asList();
+    if (offsetVectorYarp->size() != humanJointNameList.size())
+    {
+        yError() << LogPrefix << "offset_vector_deg size is not equal to the number of joints.";
+        return false;
+    }
+    offsetVector.resize(humanJointNameList.size());
+    for (size_t i = 0; i < humanJointNameList.size(); i++)
+    {
+        offsetVector(i) = offsetVectorYarp->get(i).asFloat64();
+    }
+    std::stringstream ss_vector;
+    ss_vector << std::endl << offsetVector;
+    yInfo() << LogPrefix << "offset vector: " << ss_vector.str();
+
 // TODO: Add a check if there is no glove connected!
     pGlove->Initialize(hostType);
+
+    if (!pGlove->SetHandJoints(humanJointNameList, handSide))
+    {
+        yError() << LogPrefix << "Failed to set the hand joints.";
+        return false;
+    }
+
     humanJointState.resize(humanJointNameList.size(), 0);
+    humanJointStateDeg.resize(humanJointNameList.size(), 0);
 
     return true;
 }
@@ -196,11 +274,17 @@ bool ManusGlove::ManusGloveImpl::update()
     std::lock_guard<std::mutex> lock(mutex);
 
 
-    pGlove->getHandJointPosition(humanJointState, handSide);
+    pGlove->getHandJointPosition(humanJointStateDeg, handSide);
+
+    Eigen::Map<Eigen::VectorXd> humanJointStateEigen(humanJointState.data(), humanJointState.size());
+    Eigen::Map<Eigen::VectorXd> humanJointStateDegEigen(humanJointStateDeg.data(), humanJointStateDeg.size());
+
+    // Apply the coupling matrix and offset vector
+    humanJointStateEigen = couplingMatrix * humanJointStateDegEigen + offsetVector;
 
     for (size_t i = 0; i < humanJointState.size(); i++)
     {
-        humanJointState[i] = humanJointState[i] * EIGEN_PI / 180;
+        humanJointState[i] = std::clamp(humanJointState[i], jointLimits[i].first, jointLimits[i].second) * EIGEN_PI / 180;
     }
 
     return true;
@@ -414,7 +498,7 @@ bool ManusGlove::close()
         yDebug()<<"Waiting for the thread to stop ";
         yarp::os::Time::delay(1);
 
-    }    
+    }
 
     yDebug()<<"Thread stopped ";
 

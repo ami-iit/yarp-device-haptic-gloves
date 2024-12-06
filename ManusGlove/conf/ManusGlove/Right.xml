@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE devices PUBLIC "-//YARP//DTD yarprobotinterface 3.0//EN" "http://www.yarp.it/DTD/yarprobotinterfaceV3.0.dtd">
+
+<devices>
+    <device type="ManusGlove" name="RightHapticGloveWearableDevice">
+        <param extern-name="period" name="period">0.03</param>
+        <param name="wearableName">HapticGlove</param>
+        <param name="is_right_hand">true</param>
+        <param name="is_local_host">true</param>
+        <param name="human_joint_list">( "r_thumb_oppose", "r_thumb_proximal", "r_thumb_middle", "r_thumb_distal",
+                                         "r_index_abduction", "r_index_proximal", "r_index_middle", "r_index_distal",
+                                         "r_middle_abduction", "r_middle_proximal", "r_middle_middle", "r_middle_distal",
+                                         "r_ring_abduction", "r_ring_proximal",   "r_ring_middle",   "r_ring_distal",
+                                         "r_pinky_abduction", "r_pinky_proximal",   "r_pinky_middle",   "r_pinky_distal" ) </param>
+        <param name="human_finger_list">( "r_thumb_finger", "r_index_finger", "r_middle_finger", "r_ring_finger", "r_little_finger" ) </param>
+        <param name="hand_link">r_hand</param>
+        <!--The min_joint_limit and max_joint_limit should be in degrees-->
+        <param name="min_joint_limit_deg">
+            (  0.0,  0.0,  0.0,  0.0,
+               0.0,  0.0,  0.0,  0.0,
+               0.0,  0.0,  0.0,  0.0,
+               0.0,  0.0,  0.0,  0.0,
+               0.0,  0.0,  0.0,  0.0 )
+        </param>
+        <param name="max_joint_limit_deg">
+            ( 90.0, 90.0, 90.0, 90.0,
+              90.0, 90.0, 90.0, 90.0,
+              90.0, 90.0, 90.0, 90.0,
+              90.0, 90.0, 90.0, 90.0,
+              90.0, 90.0, 90.0, 90.0 )
+        </param>
+        <param name="coupling_matrix">
+            ( 0.0,-2.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+              0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+              0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+              0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+              0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+              0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+              0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+              0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+              0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+              0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+              0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+              0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+              0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+              0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+              0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+              0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0,
+              0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0,
+              0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0,
+              0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0,
+              0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0)
+        </param>
+
+        <param name="offset_vector_deg">
+            (100.0
+               0.0,
+               0.0,
+               0.0,
+               0.0,
+               0.0,
+               0.0,
+               0.0,
+               0.0,
+               0.0,
+               0.0,
+               0.0,
+               0.0,
+               0.0,
+               0.0,
+               0.0,
+               0.0,
+               0.0,
+               0.0,
+               0.0)
+        </param>
+    </device>
+
+    <device type="iwear_wrapper" name="RightHapticGloveWearableDeviceWrapper">
+        <param name="period">0.03</param>
+        <param name="dataPortName">/WearableData/HapticGlove/RightHand/data:o</param>
+        <param name="rpcPortName">/WearableData/HapticGlove/RightHand/metadataRpc:o</param>
+        <action phase="startup" level="5" type="attach">
+            <paramlist name="networks">
+                <elem name="HapticGloveWearableDeviceWrapperLabel"> RightHapticGloveWearableDevice </elem>
+            </paramlist>
+        </action>
+        <action phase="shutdown" level="4" type="detach"/>
+    </device>
+
+    <device type="iwearactuators_wrapper" name="RightHapticGloveWearableDeviceActuatorsWrapper">
+        <param name="period">0.03</param>
+        <param name="actuatorCommandInputPortName">/WearableData/HapticGlove/RightHand/Actuators/input:i</param>
+        <action phase="startup" level="5" type="attach">
+            <paramlist name="networks">
+                <elem name="HapticGloveWearableDeviceActuatorWrapperLabel"> RightHapticGloveWearableDevice </elem>
+            </paramlist>
+        </action>
+        <action phase="shutdown" level="4" type="detach"/>
+    </device>
+</devices>
