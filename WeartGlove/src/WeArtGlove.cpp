@@ -7,7 +7,14 @@
  */
 
 #include <WeArtGlove.h>
-#include <WeArtGloveLib/WeArtGloveLib.h>
+#include <WeArtClient.h>
+#include <WeArtTexture.h>
+#include <WeArtThimbleTrackingObject.h>
+#include <WeArtTrackingCalibration.h>
+#include <WeArtTrackingRawData.h>
+#include <MiddlewareStatusListener.h>
+#include <WeArtEffect.h>
+#include <WeArtHapticObject.h>
 
 #include <yarp/os/Bottle.h>
 #include <yarp/os/LogStream.h>

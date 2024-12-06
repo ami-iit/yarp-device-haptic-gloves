@@ -70,9 +70,14 @@ yarp_install(TARGETS ${WeArtGloveDevName}
              YARP_INI DESTINATION ${YARP_PLUGIN_MANIFESTS_INSTALL_DIR}
              )
 
-set (WEARABLES_XML_FILES conf/WeArtGlove.xml
-                         conf/WeArtGloveRight.xml
-                         conf/WeArtGloveLeft.xml)
-install(FILES ${WEARABLES_XML_FILES}
-        DESTINATION ${CMAKE_INSTALL_DATADIR}/Wearables)
+set (MAIN_XML_FILES conf/WeartGlove.xml)
+
+set (HANDS_XML_FILES conf/WeartGlove/Right.xml
+                     conf/WeartGlove/Left.xml)
+
+install(FILES ${MAIN_XML_FILES}
+        DESTINATION ${CMAKE_INSTALL_DATADIR}/yarp)
+
+install(FILES ${HANDS_XML_FILES}
+        DESTINATION ${CMAKE_INSTALL_DATADIR}/yarp/WeartGlove)
 
