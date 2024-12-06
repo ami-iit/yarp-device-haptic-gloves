@@ -1,9 +1,7 @@
-<?xml version="1.0" encoding="UTF-8" ?>
-<!DOCTYPE robot PUBLIC "-//YARP//DTD yarprobotinterface 3.0//EN" "http://www.yarp.it/DTD/yarprobotinterfaceV3.0.dtd">
-<robot name="SenseGloveWearableDevice" build=0 portprefix="">
-<!--Following the example in https://github.com/robotology/robots-configuration/blob/devel/experimentalSetups/battery/hardware/battery/icubbattery.xml-->
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE devices PUBLIC "-//YARP//DTD yarprobotinterface 3.0//EN" "http://www.yarp.it/DTD/yarprobotinterfaceV3.0.dtd">
 
-    <!--Left HapticGlove Device-->
+<devices>
     <device type="WeArtGlove" name="LeftHapticGloveWearableDevice">
         <param extern-name="period" name="period">0.1</param>
         <param name="wearableName">HapticGlove</param>
@@ -55,16 +53,16 @@
                                                                                                         0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0,
                                                                                                         0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0,
                                                                                                         0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0)</param>
-        <param name="human_joint_list">( "l_thumb_oppose", "l_thumb_proximal", "l_thumb_middle", "l_thumb_distal",
-                                         "l_index_abduction", "l_index_proximal", "l_index_middle", "l_index_distal",
-                                         "l_middle_abduction", "l_middle_proximal", "l_middle_middle", "l_middle_distal",
-                                         "l_ring_abduction", "l_ring_proximal",   "l_ring_middle",   "l_ring_distal",
-                                         "l_pinky_abduction", "l_pinky_proximal",   "l_pinky_middle",   "l_pinky_distal" ) </param>
-        <param name="human_finger_list">( "l_thumb_finger", "l_index_finger", "l_middle_finger", "l_ring_finger", "l_little_finger") </param>
+        <param name="human_joint_list">("l_thumb_oppose", "l_thumb_proximal", "l_thumb_middle", "l_thumb_distal",
+                                        "l_index_abduction", "l_index_proximal", "l_index_middle", "l_index_distal",
+                                        "l_middle_abduction", "l_middle_proximal", "l_middle_middle", "l_middle_distal",
+                                        "l_ring_abduction", "l_ring_proximal",   "l_ring_middle", "l_ring_distal",
+                                        "l_pinky_abduction", "l_pinky_proximal", "l_pinky_middle", "l_pinky_distal" ) </param>
+        <param name="human_finger_list">("l_thumb_finger", "l_index_finger", "l_middle_finger", "l_ring_finger", "l_little_finger") </param>
 
         <param name="considered_joint_list">("jLeftThumb1_roty","jLeftThumb1_rotz", "jLeftThumb2_rotx", "jLeftThumb3_rotx",
-                                            "jLeftIndex1_rotx", "jLeftIndex2_rotx", "jLeftIndex3_rotx",
-                                            "jLeftMiddle1_rotx", "jLeftMiddle2_rotx", "jLeftMiddle3_rotx","jLeftElbow_roty", "jLeftWrist_rotx", "jLeftWrist_rotz")</param>
+                                             "jLeftIndex1_rotx", "jLeftIndex2_rotx", "jLeftIndex3_rotx",
+                                             "jLeftMiddle1_rotx", "jLeftMiddle2_rotx", "jLeftMiddle3_rotx","jLeftElbow_roty", "jLeftWrist_rotx", "jLeftWrist_rotz")</param>
         <param name="finger_tip_frame_list">("l_ThumbEE", "l_IndexEE", "l_MiddleEE")</param>
         <!--The min_joint_limit and max_joint_limit should be in radians-->
         <param extern-name="min_joint_limit" name="min_joint_limit">(0.174, 0, 0, 0,
@@ -105,5 +103,4 @@
         </action>
         <action phase="shutdown" level="4" type="detach"/>
     </device>
-
-</robot>
+</devices>
