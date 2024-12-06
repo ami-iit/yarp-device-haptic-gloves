@@ -2,8 +2,8 @@
 <!DOCTYPE robot PUBLIC "-//YARP//DTD yarprobotinterface 3.0//EN" "http://www.yarp.it/DTD/yarprobotinterfaceV3.0.dtd">
 <robot name="ManusGloveWearableDevice" build=0 portprefix="">
 
-    <xi:include href="ManusGlove/left.xml" disabled_by="disable_left_hand" />
+    <xi:include href="ManusGlove/Left.xml" disabled_by="disable_left_hand" />
 
-    <xi:include href="ManusGlove/right.xml" disabled_by="disable_right_hand" />
+    <xi:include href="ManusGlove/Right.xml" disabled_by="disable_right_hand" />
 
 </robot>
