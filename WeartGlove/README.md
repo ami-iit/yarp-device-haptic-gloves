@@ -4,7 +4,7 @@
 
 ## Dependencies
 
-1. Install the `WeArtGloveLib` following the instruction [here](https://github.com/ami-iit/WEART-SDK-Cpp/tree/devel_ami-iit#ami-iit).
+1. Install the `WeArtGloveLib` following the instruction [here](https://github.com/ami-iit/WEART-SDK-Cpp#installation-cmake).
 2. Download and Install the latest WEARTMiddleware [link](https://weart.it/developer-guide/).
    - Latest tested version: v.2.3.0
 

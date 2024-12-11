@@ -38,6 +38,13 @@ yarp_install(TARGETS SenseGlove
              YARP_INI DESTINATION ${YARP_PLUGIN_MANIFESTS_INSTALL_DIR}
              )
 
-set (WEARABLES_XML_FILES conf/SenseGlove.xml)
-install(FILES ${WEARABLES_XML_FILES}
-        DESTINATION ${CMAKE_INSTALL_DATADIR}/Wearables)
+set (MAIN_XML_FILES conf/SenseGlove.xml)
+
+set (HANDS_XML_FILES conf/SenseGlove/Right.xml
+                     conf/SenseGlove/Left.xml)
+
+install(FILES ${MAIN_XML_FILES}
+        DESTINATION ${CMAKE_INSTALL_DATADIR}/yarp)
+
+install(FILES ${HANDS_XML_FILES}
+        DESTINATION ${CMAKE_INSTALL_DATADIR}/yarp/SenseGlove)
