@@ -3,13 +3,12 @@
 # Dependencies
 ### Manus Glove SDK  
 - Download the SDK from https://www.manus-meta.com/resources/downloads/quantum-metagloves
-- Extract the files into a folder and rename it "ManusGlove-API".
-
+- Extract the files into a folder and rename it "ManusGlove-API". The device works only with 2.5.1 version
 - Add following environment variable:
 
 ```bash
-set ManusGlove_DIR=C:\ManusGlove-API\SDKClient\SDKClient
-set PATH=%PATH%:%ManusGlove_DIR%\ManusSDK
+set ManusGlove_DIR=C:\ManusGlove-API\SDKClient\SDKClient_Windows
+set PATH=%PATH%:%ManusGlove_DIR%\ManusSDK\lib
 ```
 ### Manus Core
 - Download and install the Manus Core from [here](https://www.manus-meta.com/resources/downloads/quantum-metagloves).

@@ -317,7 +317,8 @@ protected:
     static ManusVec3 CreateManusVec3(float p_X, float p_Y, float p_Z);
 
 protected:
-    static ManusGloveHelper *s_Instance;
+    static ManusGloveHelper* s_Instance;
+    static std::mutex s_InstanceMutex;
     bool m_Running = true;
     std::string ManusGlove_LogPrefix = "ManusGloveHelper::";
 

@@ -9,10 +9,9 @@ project(YARPManusGlove VERSION "0.0.1"
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
-set(ManusGloveLibName "ManusSDK")
 set(ManusGloveDevName "ManusGlove")
 
-find_package(${ManusGloveLibName} REQUIRED)
+find_package(ManusSDK REQUIRED)
 
 # Export all symbols in Windows
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
@@ -50,7 +49,7 @@ target_link_libraries(${ManusGloveDevName}
     IWear::IWear
     PRIVATE
     YARP::YARP_init
-    ${ManusGloveLibName}
+    ManusSDK::ManusSDK
     Eigen3::Eigen
     )
 
