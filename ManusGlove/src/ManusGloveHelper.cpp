@@ -29,7 +29,7 @@ bool ManusGloveHelper::Initialize(bool p_hostType)
     m_ShouldConnectLocally = p_hostType;
     // before we can use the SDK, some internal SDK bits need to be initialized.
     // however after initializing, the SDK is not yet connected to a host or doing anything network related just yet.
-    if (CoreSdk_Initialize(SessionType::SessionType_CoreSDK) != SDKReturnCode::SDKReturnCode_Success)
+    if (CoreSdk_InitializeCore() != SDKReturnCode::SDKReturnCode_Success)
     {
         yError() << ManusGlove_LogPrefix << "SDK::Failed to initilize Core SDK.";
         return false;
@@ -857,8 +857,12 @@ std::string ManusGloveHelper::ConvertDeviceFamilyTypeToString(DeviceFamilyType p
         return "Prime 2";
     case DeviceFamilyType_PrimeX:
         return "Prime X";
-    case DeviceFamilyType_Quantum:
-        return "Quantum";
+    case DeviceFamilyType_Metaglove:
+        return "Metaglove";
+    case DeviceFamilyType_MetaglovePro:
+        return "Metaglove Pro";
+    case DeviceFamilyType_MetagloveProPrecision:
+        return "Metaglove Pro Precision";
     case DeviceFamilyType_Prime3:
         return "Prime 3";
     case DeviceFamilyType_Virtual:
