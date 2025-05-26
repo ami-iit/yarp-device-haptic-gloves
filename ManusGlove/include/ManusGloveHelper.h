@@ -39,6 +39,7 @@ namespace manusGlove
     class ManusGloveHelper;
     class RawClientSkeleton;
     class RawClientSkeletonCollection;
+    class SkeletonNodeWithInfo;
     const std::string LogPrefix = "manusGlove::ManusGloveHelper::";
 }
 
@@ -74,12 +75,17 @@ enum class manusGlove::ClientReturnCode : int
     ClientReturnCode_MAX_CLIENT_RETURN_CODE_SIZE
 };
 
+class manusGlove::SkeletonNodeWithInfo: public SkeletonNode, public NodeInfo
+{
+};
+
+
 // Used to store the information about the final animated skeletons.
 class manusGlove::RawClientSkeleton
 {
 public:
     RawSkeletonInfo info;
-    std::vector<SkeletonNode> nodes;
+    std::vector<SkeletonNodeWithInfo> nodes;
 };
 
 // Used to store all the final animated skeletons received from Core.

@@ -892,6 +892,7 @@ void ManusGloveHelper::OnRawSkeletonStreamCallback(const SkeletonStreamInfo* con
                     right_index = i;
                 }
                 CoreSdk_GetRawSkeletonData(i, s_Instance->m_RawSkeletons.skeletons[i].nodes.data(), s_Instance->m_RawSkeletons.skeletons[i].nodes.size());
+                CoreSdk_GetRawSkeletonNodeInfoArray(s_Instance->m_RawSkeletons.skeletons[i].info.gloveId, s_Instance->m_RawSkeletons.skeletons[i].nodes.data(), s_Instance->m_RawSkeletons.skeletons[i].nodes.size());
             }
         }
 
