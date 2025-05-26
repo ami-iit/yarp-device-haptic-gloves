@@ -84,6 +84,12 @@ bool ManusGloveHelper::Initialize(bool p_hostType)
         return false;
     }
 
+    if (CoreSdk_SetRawSkeletonHandMotion(HandMotion::HandMotion_None) != SDKReturnCode::SDKReturnCode_Success)
+    {
+        yError() << ManusGlove_LogPrefix << "SDK::Failed to set the raw skeleton hand motion.";
+        return false;
+    }
+
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
     PrintDongleData();
     m_startupTime = yarp::os::Time::now();
@@ -153,6 +159,13 @@ bool ManusGloveHelper::RegisterAllCallbacks()
     if (CoreSdk_RegisterCallbackForErgonomicsStream(*OnErgonomicsCallback) != SDKReturnCode::SDKReturnCode_Success)
     {
         yError() <<ManusGlove_LogPrefix << "Failed to register callback function for ergonomics data from Manus Core. SDK is not available.";
+        return false;
+    }
+
+    // Register the callback for the raw skeleton data
+    if (CoreSdk_RegisterCallbackForRawSkeletonStream(*OnRawSkeletonStreamCallback) != SDKReturnCode::SDKReturnCode_Success)
+    {
+        yError() << ManusGlove_LogPrefix << "Failed to register callback function for raw skeleton stream from Manus Core. SDK is not available.";
         return false;
     }
 
@@ -851,6 +864,49 @@ void ManusGloveHelper::OnErgonomicsCallback(const ErgonomicsStream* const p_Ergo
                     t_Ergo->data[j] = p_Ergo->data[i].data[j];// TODO: HumanJointState
                 }
             }
+        }
+    }
+}
+
+void ManusGloveHelper::OnRawSkeletonStreamCallback(const SkeletonStreamInfo* const p_RawSkeletonStreamInfo)
+{
+    if (s_Instance)
+    {
+        int left_index = -1;
+        int right_index = -1;
+        {
+            std::lock_guard<std::mutex> lock(s_Instance->m_RawSkeletonsMutex);
+            s_Instance->m_RawSkeletons.skeletons.resize(p_RawSkeletonStreamInfo->skeletonsCount);
+
+            for (uint32_t i = 0; i < p_RawSkeletonStreamInfo->skeletonsCount; i++)
+            {
+                CoreSdk_GetRawSkeletonInfo(i, &s_Instance->m_RawSkeletons.skeletons[i].info);
+                s_Instance->m_RawSkeletons.skeletons[i].nodes.resize(s_Instance->m_RawSkeletons.skeletons[i].info.nodesCount);
+                s_Instance->m_RawSkeletons.skeletons[i].info.publishTime = p_RawSkeletonStreamInfo->publishTime;
+                if (s_Instance->m_RawSkeletons.skeletons[i].info.gloveId == s_Instance->m_FirstLeftGloveID)
+                {
+                    left_index = i;
+                }
+                else if (s_Instance->m_RawSkeletons.skeletons[i].info.gloveId == s_Instance->m_FirstRightGloveID)
+                {
+                    right_index = i;
+                }
+                CoreSdk_GetRawSkeletonData(i, s_Instance->m_RawSkeletons.skeletons[i].nodes.data(), s_Instance->m_RawSkeletons.skeletons[i].nodes.size());
+            }
+        }
+
+
+        if (left_index >= 0)
+        {
+            std::lock_guard<std::mutex> lock(s_Instance->m_LeftGloveRawSkeletonMutex);
+            s_Instance->m_LeftGloveRawSkeleton.info = s_Instance->m_RawSkeletons.skeletons[left_index].info;
+            s_Instance->m_LeftGloveRawSkeleton.nodes = s_Instance->m_RawSkeletons.skeletons[left_index].nodes;
+        }
+        if (right_index >= 0)
+        {
+            std::lock_guard<std::mutex> lock(s_Instance->m_RightGloveRawSkeletonMutex);
+            s_Instance->m_RightGloveRawSkeleton.info = s_Instance->m_RawSkeletons.skeletons[right_index].info;
+            s_Instance->m_RightGloveRawSkeleton.nodes = s_Instance->m_RawSkeletons.skeletons[right_index].nodes;
         }
     }
 }
