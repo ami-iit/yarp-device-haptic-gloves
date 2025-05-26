@@ -13,25 +13,43 @@ using namespace manusGlove;
 using namespace std;
 
 ManusGloveHelper* ManusGloveHelper::s_Instance = nullptr;
+std::mutex manusGlove::ManusGloveHelper::s_InstanceMutex;
 
 ManusGloveHelper::ManusGloveHelper()
 {
+    std::lock_guard<std::mutex> lock(s_InstanceMutex);
+    if (s_Instance != nullptr)
+    {
+        yInfo() << ManusGlove_LogPrefix << "Found an already existing ManusGloveHelper instance.";
+        return;
+    }
     s_Instance = this;
 }
 
 ManusGloveHelper::~ManusGloveHelper()
 {
+    std::lock_guard<std::mutex> lock(s_InstanceMutex);
+    if (s_Instance != this)
+    {
+        return;
+    }
     s_Instance = nullptr;
 }
 
 bool ManusGloveHelper::Initialize(bool p_hostType)
 {
+    if (s_Instance != this)
+    {
+        yInfo() << ManusGlove_LogPrefix << "There is already an instance of ManusGloveHelper. Avoiding initializing.";
+        return true;
+    }
     m_ShouldConnectLocally = p_hostType;
     // before we can use the SDK, some internal SDK bits need to be initialized.
     // however after initializing, the SDK is not yet connected to a host or doing anything network related just yet.
-    if (CoreSdk_InitializeCore() != SDKReturnCode::SDKReturnCode_Success)
+    auto errorCode = CoreSdk_InitializeCore();
+    if (errorCode != SDKReturnCode::SDKReturnCode_Success)
     {
-        yError() << ManusGlove_LogPrefix << "SDK::Failed to initilize Core SDK.";
+        yError() << ManusGlove_LogPrefix << "SDK::Failed to initilize Core SDK. Error:" << errorCode;
         return false;
     }
 
@@ -69,6 +87,12 @@ bool ManusGloveHelper::Initialize(bool p_hostType)
 
 bool ManusGloveHelper::ShutDown()
 {
+    if (s_Instance != this)
+    {
+        yInfo() << ManusGlove_LogPrefix << "There is another instance of ManusGloveHelper. Avoiding shutting down.";
+        return true;
+    }
+
     if (CoreSdk_ShutDown() != SDKReturnCode::SDKReturnCode_Success)
     {
         yError() << ManusGlove_LogPrefix << "Failed to shut down the SDK wrapper.";

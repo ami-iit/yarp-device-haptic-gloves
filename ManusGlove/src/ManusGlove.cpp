@@ -255,7 +255,12 @@ bool ManusGlove::ManusGloveImpl::open(yarp::os::Searchable& config)
     yInfo() << LogPrefix << "offset vector: " << ss_vector.str();
 
 // TODO: Add a check if there is no glove connected!
-    pGlove->Initialize(hostType);
+    if (!pGlove->Initialize(hostType))
+    {
+        yError() << LogPrefix << "Failed to initialize the ManusGloveHelper on the" << handSideLogPrefix << "hand.";
+        return false;
+    }
+    yInfo() << LogPrefix << "ManusGloveHelper initialized successfully on the" << handSideLogPrefix << "hand.";
 
     if (!pGlove->SetHandJoints(humanJointNameList, handSide))
     {
