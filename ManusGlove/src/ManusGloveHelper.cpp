@@ -53,6 +53,12 @@ bool ManusGloveHelper::Initialize(bool p_hostType)
         return false;
     }
 
+    if (CoreSdk_SetSessionType(SessionType::SessionType_CoreSDK) != SDKReturnCode::SDKReturnCode_Success)
+    {
+        yError() << ManusGlove_LogPrefix << "SDK::Failed to set the session type.";
+        return false;
+    }
+
     if (!RegisterAllCallbacks())
     {
         yError() << ManusGlove_LogPrefix << "SDK::Failed to register all the callbacks.";
@@ -819,13 +825,16 @@ void ManusGloveHelper::OnErgonomicsCallback(const ErgonomicsStream* const p_Ergo
                 continue;
 
             ErgonomicsData *t_Ergo = nullptr;
+            std::mutex* t_Mutex = nullptr;
             if (p_Ergo->data[i].id == s_Instance->m_FirstLeftGloveID)
             {
                 t_Ergo = &s_Instance->m_LeftGloveErgoData;
+                t_Mutex = &s_Instance->m_LeftGloveErgoDataMutex;
             }
             if (p_Ergo->data[i].id == s_Instance->m_FirstRightGloveID)
             {
                 t_Ergo = &s_Instance->m_RightGloveErgoData;
+                t_Mutex = &s_Instance->m_RightGloveErgoDataMutex;
             }
             if (t_Ergo == nullptr)
                 continue;
@@ -834,7 +843,13 @@ void ManusGloveHelper::OnErgonomicsCallback(const ErgonomicsStream* const p_Ergo
             t_Ergo->isUserID = p_Ergo->data[i].isUserID;
             for (int j = 0; j < ErgonomicsDataType::ErgonomicsDataType_MAX_SIZE; j++)
             {
-                t_Ergo->data[j] = p_Ergo->data[i].data[j];// TODO: HumanJointState
+                std::lock_guard<std::mutex> lock(*t_Mutex);
+                t_Ergo->id = p_Ergo->data[i].id;
+                t_Ergo->isUserID = p_Ergo->data[i].isUserID;
+                for (int j = 0; j < ErgonomicsDataType::ErgonomicsDataType_MAX_SIZE; j++)
+                {
+                    t_Ergo->data[j] = p_Ergo->data[i].data[j];// TODO: HumanJointState
+                }
             }
         }
     }
@@ -929,10 +944,20 @@ bool ManusGloveHelper::getHandJointPosition(std::vector<double>& jointAngleList,
     }
 
     float* data = p_isRightHand ? s_Instance->m_RightGloveErgoData.data : s_Instance->m_LeftGloveErgoData.data;
+    std::mutex* mutex = p_isRightHand ? &s_Instance->m_RightGloveErgoDataMutex : &s_Instance->m_LeftGloveErgoDataMutex;
 
-    for (size_t i = 0; i < m_Joints.size(); i++)
+    if (data == nullptr)
     {
-        jointAngleList[i] = RoundFloatValue(data[m_Joints[i]], 2);
+        yError() << ManusGlove_LogPrefix << "Data is null for the hand.";
+        return false;
+    }
+
+    std::lock_guard<std::mutex> lock(*mutex);
+    {
+        for (size_t i = 0; i < m_Joints.size(); i++)
+        {
+            jointAngleList[i] = RoundFloatValue(data[m_Joints[i]], 2);
+        }
     }
 
     return true;

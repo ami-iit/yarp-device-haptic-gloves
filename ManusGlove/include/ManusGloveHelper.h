@@ -352,7 +352,9 @@ protected:
     std::vector<GestureLandscapeData> m_GestureLandscapeData;
 
     ManusTimestampInfo m_ErgoTimestampInfo;
+    std::mutex m_LeftGloveErgoDataMutex;
     ErgonomicsData m_LeftGloveErgoData;
+    std::mutex m_RightGloveErgoDataMutex;
     ErgonomicsData m_RightGloveErgoData;
 
     uint32_t m_FirstLeftGloveID = 0;
