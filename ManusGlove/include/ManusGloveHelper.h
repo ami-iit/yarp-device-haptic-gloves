@@ -191,6 +191,27 @@ public:
     std::string ConvertDeviceFamilyTypeToString(DeviceFamilyType p_Type);
 
     /**
+     * @brief Convert Chain Type To String
+     * @param p_Type
+     * @return std::string
+     */
+    std::string ConvertChainTypeToString(ChainType p_Type);
+
+    /**
+     * @brief Convert Side To String
+     * @param p_Side
+     * @return std::string
+     */
+    std::string ConvertSideToString(Side p_Side);
+
+    /**
+     * @brief Convert Finger Joint Type To String
+     * @param p_Type
+     * @return std::string
+     */
+    std::string ConvertFingerJointTypeToString(FingerJointType p_Type);
+
+    /**
      * @brief Copy the given string into the given target.
      *
      * @param p_Target Given Target

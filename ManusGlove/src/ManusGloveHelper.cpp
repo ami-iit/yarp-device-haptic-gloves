@@ -968,6 +968,86 @@ std::string ManusGloveHelper::ConvertDeviceFamilyTypeToString(DeviceFamilyType p
     }
 }
 
+std::string manusGlove::ManusGloveHelper::ConvertChainTypeToString(ChainType p_Type)
+{
+    switch (p_Type)
+    {
+    case ChainType_FingerThumb:
+        return "Thumb";
+    case ChainType_FingerIndex:
+        return "Index";
+    case ChainType_FingerMiddle:
+        return "Middle";
+    case ChainType_FingerRing:
+        return "Ring";
+    case ChainType_FingerPinky:
+        return "Pinky";
+    case ChainType_Head:
+        return "Head";
+    case ChainType_Neck:
+        return "Neck";
+    case ChainType_Spine:
+        return "Spine";
+    case ChainType_Shoulder:
+        return "Shoulder";
+    case ChainType_Arm:
+        return "Arm";
+    case ChainType_Hand:
+        return "Hand";
+    case ChainType_Foot:
+        return "Foot";
+    case ChainType_Toe:
+        return "Toe";
+    case ChainType_Invalid:
+        return "Invalid";
+    case ChainType_Leg:
+        return "Leg";
+    default:
+        break;
+    }
+    return "Unknown";
+}
+
+inline std::string manusGlove::ManusGloveHelper::ConvertSideToString(Side p_Side)
+{
+    switch (p_Side)
+    {
+    case Side_Invalid:
+        return "Invalid";
+    case Side_Left:
+        return "Left";
+    case Side_Right:
+        return "Right";
+    case Side_Center:
+        return "Center";
+    default:
+        break;
+    }
+    return "Unknown";
+}
+
+std::string manusGlove::ManusGloveHelper::ConvertFingerJointTypeToString(FingerJointType p_Type)
+{
+    switch (p_Type)
+    {
+     case FingerJointType_Invalid:
+         return "Invalid";
+     case FingerJointType_Metacarpal:
+         return "Metacarpal";
+     case FingerJointType_Proximal:
+         return "Proximal";
+     case FingerJointType_Intermediate:
+         return "Intermediate";
+     case FingerJointType_Distal:
+         return "Distal";
+     case FingerJointType_Tip:
+         return "Tip";
+     default:
+         break;
+    }
+    return "Unknown";
+}
+
 bool ManusGloveHelper::CopyString(char *const p_Target, const size_t p_MaxLengthThatWillFitInTarget, const std::string &p_Source)
 {
     const errno_t t_CopyResult = strcpy_s(
