@@ -352,6 +352,33 @@ bool manusGlove::ManusGloveHelper::SetHandJoints(const std::vector<std::string>&
     return true;
 }
 
+inline Eigen::Matrix4f manusGlove::ManusGloveHelper::ManusTransformToEigen(const ManusTransform& p_Transform)
+{
+    Eigen::Matrix4f t_Matrix;
+    t_Matrix.setIdentity();
+    t_Matrix.col(3) = Eigen::Vector4f(p_Transform.position.x, p_Transform.position.y, p_Transform.position.z, 1.0f);
+    Eigen::Quaternionf t_Quat(p_Transform.rotation.w, p_Transform.rotation.x, p_Transform.rotation.y, p_Transform.rotation.z);
+    t_Matrix.block<3, 3>(0, 0) = t_Quat.toRotationMatrix();
+    return t_Matrix;
+}
+
+bool manusGlove::ManusGloveHelper::getHandRawSkeleton(std::vector<std::pair<std::string, Eigen::Matrix4f>>& p_SkeletonData, bool p_isRightHand)
+{
+    RawClientSkeleton& t_RawSkeleton = p_isRightHand ? m_RightGloveRawSkeleton : m_LeftGloveRawSkeleton;
+    std::lock_guard<std::mutex> lock(p_isRightHand ? m_RightGloveRawSkeletonMutex : m_LeftGloveRawSkeletonMutex);
+    p_SkeletonData.resize(t_RawSkeleton.nodes.size());
+    for (size_t i = 0; i < t_RawSkeleton.nodes.size(); ++i)
+    {
+        const auto& node = t_RawSkeleton.nodes[i];
+        std::string side = ConvertSideToString(node.side);
+        std::string chainType = ConvertChainTypeToString(node.chainType);
+        std::string jointType = ConvertFingerJointTypeToString(node.fingerJointType);
+        p_SkeletonData[i].first = side + chainType + jointType;
+        p_SkeletonData[i].second = ManusTransformToEigen(node.transform);
+    }
+    return true;
+}
+
 bool ManusGloveHelper::SetupHandNodes(uint32_t p_SklIndex)
 {
     // Define number of fingers per hand and number of joints per finger

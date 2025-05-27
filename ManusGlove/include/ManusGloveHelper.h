@@ -237,6 +237,16 @@ public:
      */
     bool SetHandJoints(const std::vector<std::string>& p_JointNames, bool p_isRightHand);
 
+    /**
+    * Converts a ManusTransform to an Eigen::Matrix4f.
+    */
+    Eigen::Matrix4f ManusTransformToEigen(const ManusTransform& p_Transform);
+
+    /**
+    * Get the raw skeleton data of a hand.
+    */
+    bool getHandRawSkeleton(std::vector<std::pair<std::string, Eigen::Matrix4f>>& p_SkeletonData, bool p_isRightHand);
+
     //===================================================================================================================================================================================
 
 protected:
