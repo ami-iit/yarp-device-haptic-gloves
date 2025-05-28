@@ -181,7 +181,7 @@ bool ManusGloveHelper::InitializeCoordinateSystem()
     CoordinateSystemDirection t_Direction;
     bool p_UseWorldCoordinates = true;
     t_Direction.x = AxisDirection::AxisDirection_Forward;
-    t_Direction.y = AxisDirection::AxisDirection_Right;
+    t_Direction.y = AxisDirection::AxisDirection_Left;
     t_Direction.z = AxisDirection::AxisDirection_Up;
 
     if (CoreSdk_InitializeCoordinateSystemWithDirection(t_Direction, p_UseWorldCoordinates) != SDKReturnCode::SDKReturnCode_Success)
