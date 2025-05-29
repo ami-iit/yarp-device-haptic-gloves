@@ -371,15 +371,16 @@ inline Eigen::Matrix4f manusGlove::ManusGloveHelper::ManusTransformToEigen(const
 
 bool manusGlove::ManusGloveHelper::getHandRawSkeleton(std::vector<std::pair<std::string, Eigen::Matrix4f>>& p_SkeletonData, bool p_isRightHand)
 {
-    RawClientSkeleton& t_RawSkeleton = p_isRightHand ? m_RightGloveRawSkeleton : m_LeftGloveRawSkeleton;
-    std::lock_guard<std::mutex> lock(p_isRightHand ? m_RightGloveRawSkeletonMutex : m_LeftGloveRawSkeletonMutex);
+    const RawClientSkeleton& t_RawSkeleton = p_isRightHand ? s_Instance->m_RightGloveRawSkeleton : s_Instance->m_LeftGloveRawSkeleton;
+    std::lock_guard<std::mutex> lock(p_isRightHand ? s_Instance->m_RightGloveRawSkeletonMutex : s_Instance->m_LeftGloveRawSkeletonMutex);
     p_SkeletonData.resize(t_RawSkeleton.nodes.size());
-    for (size_t i = 0; i < t_RawSkeleton.nodes.size(); ++i)
+    for (size_t i = 0; i < t_RawSkeleton.nodeInfos.size(); ++i)
     {
+        const auto& nodeInfo = t_RawSkeleton.nodeInfos[i];
         const auto& node = t_RawSkeleton.nodes[i];
-        std::string side = ConvertSideToString(node.side);
-        std::string chainType = ConvertChainTypeToString(node.chainType);
-        std::string jointType = ConvertFingerJointTypeToString(node.fingerJointType);
+        std::string side = ConvertSideToString(nodeInfo.side);
+        std::string chainType = ConvertChainTypeToString(nodeInfo.chainType);
+        std::string jointType = ConvertFingerJointTypeToString(nodeInfo.fingerJointType);
         p_SkeletonData[i].first = side + chainType + jointType;
         p_SkeletonData[i].second = ManusTransformToEigen(node.transform);
     }
@@ -925,8 +926,11 @@ void ManusGloveHelper::OnRawSkeletonStreamCallback(const SkeletonStreamInfo* con
                 {
                     right_index = i;
                 }
-                CoreSdk_GetRawSkeletonData(i, s_Instance->m_RawSkeletons.skeletons[i].nodes.data(), s_Instance->m_RawSkeletons.skeletons[i].nodes.size());
-                CoreSdk_GetRawSkeletonNodeInfoArray(s_Instance->m_RawSkeletons.skeletons[i].info.gloveId, s_Instance->m_RawSkeletons.skeletons[i].nodes.data(), s_Instance->m_RawSkeletons.skeletons[i].nodes.size());
+                auto ok = CoreSdk_GetRawSkeletonData(i, s_Instance->m_RawSkeletons.skeletons[i].nodes.data(), s_Instance->m_RawSkeletons.skeletons[i].nodes.size());
+                if (ok != SDKReturnCode::SDKReturnCode_Success)
+                {
+                    yError() << "Failed to get raw skeleton data for skeleton index: " << i;
+                }
             }
         }
 
@@ -934,14 +938,25 @@ void ManusGloveHelper::OnRawSkeletonStreamCallback(const SkeletonStreamInfo* con
         if (left_index >= 0)
         {
             std::lock_guard<std::mutex> lock(s_Instance->m_LeftGloveRawSkeletonMutex);
-            s_Instance->m_LeftGloveRawSkeleton.info = s_Instance->m_RawSkeletons.skeletons[left_index].info;
-            s_Instance->m_LeftGloveRawSkeleton.nodes = s_Instance->m_RawSkeletons.skeletons[left_index].nodes;
+            s_Instance->m_LeftGloveRawSkeleton = s_Instance->m_RawSkeletons.skeletons[left_index];
+            s_Instance->m_LeftGloveRawSkeleton.nodeInfos.resize(s_Instance->m_LeftGloveRawSkeleton.info.nodesCount);
+            auto ok = CoreSdk_GetRawSkeletonNodeInfoArray(s_Instance->m_LeftGloveRawSkeleton.info.gloveId, s_Instance->m_LeftGloveRawSkeleton.nodeInfos.data(), s_Instance->m_LeftGloveRawSkeleton.nodeInfos.size());
+            if (ok != SDKReturnCode::SDKReturnCode_Success)
+            {
+                yError() << "Failed to get raw skeleton node info for left glove with ID: " << s_Instance->m_LeftGloveRawSkeleton.info.gloveId;
+            }
+
         }
         if (right_index >= 0)
         {
             std::lock_guard<std::mutex> lock(s_Instance->m_RightGloveRawSkeletonMutex);
-            s_Instance->m_RightGloveRawSkeleton.info = s_Instance->m_RawSkeletons.skeletons[right_index].info;
-            s_Instance->m_RightGloveRawSkeleton.nodes = s_Instance->m_RawSkeletons.skeletons[right_index].nodes;
+            s_Instance->m_RightGloveRawSkeleton = s_Instance->m_RawSkeletons.skeletons[right_index];
+            s_Instance->m_RightGloveRawSkeleton.nodeInfos.resize(s_Instance->m_RightGloveRawSkeleton.info.nodesCount);
+            auto ok = CoreSdk_GetRawSkeletonNodeInfoArray(s_Instance->m_RightGloveRawSkeleton.info.gloveId, s_Instance->m_RightGloveRawSkeleton.nodeInfos.data(), s_Instance->m_RightGloveRawSkeleton.nodeInfos.size());
+            if (ok != SDKReturnCode::SDKReturnCode_Success)
+            {
+                yError() << "Failed to get raw skeleton node info for right glove with ID: " << s_Instance->m_RightGloveRawSkeleton.info.gloveId;
+            }
         }
     }
 }
