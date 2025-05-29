@@ -177,14 +177,21 @@ bool ManusGloveHelper::InitializeCoordinateSystem()
     // after everything is registered and initialized.
     // we must also set the coordinate system being used for the data in this client.
     // (each client can have their own settings. unreal and unity for instance use different coordinate systems)
-    // if this is not set, the SDK will NOT connect to any Manus core host.
-    CoordinateSystemDirection t_Direction;
+    // if this is not set, the SDK will not connect to any Manus core host.
+    // The coordinate system used for this client is z-up, x-positive, right-handed and in meter scale.
+    CoordinateSystemVUH t_VUH;
+    CoordinateSystemVUH_Init(&t_VUH);
+    t_VUH.handedness = Side::Side_Right;
+    t_VUH.up = AxisPolarity::AxisPolarity_PositiveZ;
+    t_VUH.view = AxisView::AxisView_XFromViewer;
+    t_VUH.unitScale = 1.0f; //1.0 is meters, 0.01 is cm, 0.001 is mm.
     bool p_UseWorldCoordinates = true;
-    t_Direction.x = AxisDirection::AxisDirection_Forward;
-    t_Direction.y = AxisDirection::AxisDirection_Left;
-    t_Direction.z = AxisDirection::AxisDirection_Up;
 
-    if (CoreSdk_InitializeCoordinateSystemWithDirection(t_Direction, p_UseWorldCoordinates) != SDKReturnCode::SDKReturnCode_Success)
+
+    // The above specified coordinate system is used to initialize and the coordinate space is specified (world/local).
+    const SDKReturnCode t_CoordinateResult = CoreSdk_InitializeCoordinateSystemWithVUH(t_VUH, p_UseWorldCoordinates);
+
+    if (t_CoordinateResult != SDKReturnCode::SDKReturnCode_Success)
     {
         yError() << ManusGlove_LogPrefix << "Failed to Initialize the coordinate system.";
         return false;
