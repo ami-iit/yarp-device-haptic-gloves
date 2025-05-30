@@ -53,6 +53,12 @@ bool ManusGloveHelper::Initialize(bool p_hostType)
         return false;
     }
 
+    if (CoreSdk_SetSessionType(SessionType::SessionType_CoreSDK) != SDKReturnCode::SDKReturnCode_Success)
+    {
+        yError() << ManusGlove_LogPrefix << "SDK::Failed to set the session type.";
+        return false;
+    }
+
     if (!RegisterAllCallbacks())
     {
         yError() << ManusGlove_LogPrefix << "SDK::Failed to register all the callbacks.";
@@ -75,6 +81,12 @@ bool ManusGloveHelper::Initialize(bool p_hostType)
     if (!ConnectingToCore())
     {
         yError() << ManusGlove_LogPrefix << "Failed to connect to the core.";
+        return false;
+    }
+
+    if (CoreSdk_SetRawSkeletonHandMotion(HandMotion::HandMotion_None) != SDKReturnCode::SDKReturnCode_Success)
+    {
+        yError() << ManusGlove_LogPrefix << "SDK::Failed to set the raw skeleton hand motion.";
         return false;
     }
 
@@ -150,6 +162,13 @@ bool ManusGloveHelper::RegisterAllCallbacks()
         return false;
     }
 
+    // Register the callback for the raw skeleton data
+    if (CoreSdk_RegisterCallbackForRawSkeletonStream(*OnRawSkeletonStreamCallback) != SDKReturnCode::SDKReturnCode_Success)
+    {
+        yError() << ManusGlove_LogPrefix << "Failed to register callback function for raw skeleton stream from Manus Core. SDK is not available.";
+        return false;
+    }
+
     return true;
 }
 
@@ -158,14 +177,21 @@ bool ManusGloveHelper::InitializeCoordinateSystem()
     // after everything is registered and initialized.
     // we must also set the coordinate system being used for the data in this client.
     // (each client can have their own settings. unreal and unity for instance use different coordinate systems)
-    // if this is not set, the SDK will NOT connect to any Manus core host.
-    CoordinateSystemDirection t_Direction;
+    // if this is not set, the SDK will not connect to any Manus core host.
+    // The coordinate system used for this client is z-up, x-positive, right-handed and in meter scale.
+    CoordinateSystemVUH t_VUH;
+    CoordinateSystemVUH_Init(&t_VUH);
+    t_VUH.handedness = Side::Side_Right;
+    t_VUH.up = AxisPolarity::AxisPolarity_PositiveZ;
+    t_VUH.view = AxisView::AxisView_XFromViewer;
+    t_VUH.unitScale = 1.0f; //1.0 is meters, 0.01 is cm, 0.001 is mm.
     bool p_UseWorldCoordinates = true;
-    t_Direction.x = AxisDirection::AxisDirection_Forward;
-    t_Direction.y = AxisDirection::AxisDirection_Right;
-    t_Direction.z = AxisDirection::AxisDirection_Up;
 
-    if (CoreSdk_InitializeCoordinateSystemWithDirection(t_Direction, p_UseWorldCoordinates) != SDKReturnCode::SDKReturnCode_Success)
+
+    // The above specified coordinate system is used to initialize and the coordinate space is specified (world/local).
+    const SDKReturnCode t_CoordinateResult = CoreSdk_InitializeCoordinateSystemWithVUH(t_VUH, p_UseWorldCoordinates);
+
+    if (t_CoordinateResult != SDKReturnCode::SDKReturnCode_Success)
     {
         yError() << ManusGlove_LogPrefix << "Failed to Initialize the coordinate system.";
         return false;
@@ -329,6 +355,34 @@ bool manusGlove::ManusGloveHelper::SetHandJoints(const std::vector<std::string>&
             yError() << ManusGlove_LogPrefix << failure;
         }
         return false;
+    }
+    return true;
+}
+
+inline Eigen::Matrix4f manusGlove::ManusGloveHelper::ManusTransformToEigen(const ManusTransform& p_Transform)
+{
+    Eigen::Matrix4f t_Matrix;
+    t_Matrix.setIdentity();
+    t_Matrix.col(3) = Eigen::Vector4f(p_Transform.position.x, p_Transform.position.y, p_Transform.position.z, 1.0f);
+    Eigen::Quaternionf t_Quat(p_Transform.rotation.w, p_Transform.rotation.x, p_Transform.rotation.y, p_Transform.rotation.z);
+    t_Matrix.block<3, 3>(0, 0) = t_Quat.toRotationMatrix();
+    return t_Matrix;
+}
+
+bool manusGlove::ManusGloveHelper::getHandRawSkeleton(std::vector<std::pair<std::string, Eigen::Matrix4f>>& p_SkeletonData, bool p_isRightHand)
+{
+    const RawClientSkeleton& t_RawSkeleton = p_isRightHand ? s_Instance->m_RightGloveRawSkeleton : s_Instance->m_LeftGloveRawSkeleton;
+    std::lock_guard<std::mutex> lock(p_isRightHand ? s_Instance->m_RightGloveRawSkeletonMutex : s_Instance->m_LeftGloveRawSkeletonMutex);
+    p_SkeletonData.resize(t_RawSkeleton.nodes.size());
+    for (size_t i = 0; i < t_RawSkeleton.nodeInfos.size(); ++i)
+    {
+        const auto& nodeInfo = t_RawSkeleton.nodeInfos[i];
+        const auto& node = t_RawSkeleton.nodes[i];
+        std::string side = ConvertSideToString(nodeInfo.side);
+        std::string chainType = ConvertChainTypeToString(nodeInfo.chainType);
+        std::string jointType = ConvertFingerJointTypeToString(nodeInfo.fingerJointType);
+        p_SkeletonData[i].first = side + chainType + jointType;
+        p_SkeletonData[i].second = ManusTransformToEigen(node.transform);
     }
     return true;
 }
@@ -819,13 +873,16 @@ void ManusGloveHelper::OnErgonomicsCallback(const ErgonomicsStream* const p_Ergo
                 continue;
 
             ErgonomicsData *t_Ergo = nullptr;
+            std::mutex* t_Mutex = nullptr;
             if (p_Ergo->data[i].id == s_Instance->m_FirstLeftGloveID)
             {
                 t_Ergo = &s_Instance->m_LeftGloveErgoData;
+                t_Mutex = &s_Instance->m_LeftGloveErgoDataMutex;
             }
             if (p_Ergo->data[i].id == s_Instance->m_FirstRightGloveID)
             {
                 t_Ergo = &s_Instance->m_RightGloveErgoData;
+                t_Mutex = &s_Instance->m_RightGloveErgoDataMutex;
             }
             if (t_Ergo == nullptr)
                 continue;
@@ -834,7 +891,71 @@ void ManusGloveHelper::OnErgonomicsCallback(const ErgonomicsStream* const p_Ergo
             t_Ergo->isUserID = p_Ergo->data[i].isUserID;
             for (int j = 0; j < ErgonomicsDataType::ErgonomicsDataType_MAX_SIZE; j++)
             {
-                t_Ergo->data[j] = p_Ergo->data[i].data[j];// TODO: HumanJointState
+                std::lock_guard<std::mutex> lock(*t_Mutex);
+                t_Ergo->id = p_Ergo->data[i].id;
+                t_Ergo->isUserID = p_Ergo->data[i].isUserID;
+                for (int j = 0; j < ErgonomicsDataType::ErgonomicsDataType_MAX_SIZE; j++)
+                {
+                    t_Ergo->data[j] = p_Ergo->data[i].data[j];// TODO: HumanJointState
+                }
+            }
+        }
+    }
+}
+
+void ManusGloveHelper::OnRawSkeletonStreamCallback(const SkeletonStreamInfo* const p_RawSkeletonStreamInfo)
+{
+    if (s_Instance)
+    {
+        int left_index = -1;
+        int right_index = -1;
+        {
+            std::lock_guard<std::mutex> lock(s_Instance->m_RawSkeletonsMutex);
+            s_Instance->m_RawSkeletons.skeletons.resize(p_RawSkeletonStreamInfo->skeletonsCount);
+
+            for (uint32_t i = 0; i < p_RawSkeletonStreamInfo->skeletonsCount; i++)
+            {
+                CoreSdk_GetRawSkeletonInfo(i, &s_Instance->m_RawSkeletons.skeletons[i].info);
+                s_Instance->m_RawSkeletons.skeletons[i].nodes.resize(s_Instance->m_RawSkeletons.skeletons[i].info.nodesCount);
+                s_Instance->m_RawSkeletons.skeletons[i].info.publishTime = p_RawSkeletonStreamInfo->publishTime;
+                if (s_Instance->m_RawSkeletons.skeletons[i].info.gloveId == s_Instance->m_FirstLeftGloveID)
+                {
+                    left_index = i;
+                }
+                else if (s_Instance->m_RawSkeletons.skeletons[i].info.gloveId == s_Instance->m_FirstRightGloveID)
+                {
+                    right_index = i;
+                }
+                auto ok = CoreSdk_GetRawSkeletonData(i, s_Instance->m_RawSkeletons.skeletons[i].nodes.data(), s_Instance->m_RawSkeletons.skeletons[i].nodes.size());
+                if (ok != SDKReturnCode::SDKReturnCode_Success)
+                {
+                    yError() << "Failed to get raw skeleton data for skeleton index: " << i;
+                }
+            }
+        }
+
+
+        if (left_index >= 0)
+        {
+            std::lock_guard<std::mutex> lock(s_Instance->m_LeftGloveRawSkeletonMutex);
+            s_Instance->m_LeftGloveRawSkeleton = s_Instance->m_RawSkeletons.skeletons[left_index];
+            s_Instance->m_LeftGloveRawSkeleton.nodeInfos.resize(s_Instance->m_LeftGloveRawSkeleton.info.nodesCount);
+            auto ok = CoreSdk_GetRawSkeletonNodeInfoArray(s_Instance->m_LeftGloveRawSkeleton.info.gloveId, s_Instance->m_LeftGloveRawSkeleton.nodeInfos.data(), s_Instance->m_LeftGloveRawSkeleton.nodeInfos.size());
+            if (ok != SDKReturnCode::SDKReturnCode_Success)
+            {
+                yError() << "Failed to get raw skeleton node info for left glove with ID: " << s_Instance->m_LeftGloveRawSkeleton.info.gloveId;
+            }
+
+        }
+        if (right_index >= 0)
+        {
+            std::lock_guard<std::mutex> lock(s_Instance->m_RightGloveRawSkeletonMutex);
+            s_Instance->m_RightGloveRawSkeleton = s_Instance->m_RawSkeletons.skeletons[right_index];
+            s_Instance->m_RightGloveRawSkeleton.nodeInfos.resize(s_Instance->m_RightGloveRawSkeleton.info.nodesCount);
+            auto ok = CoreSdk_GetRawSkeletonNodeInfoArray(s_Instance->m_RightGloveRawSkeleton.info.gloveId, s_Instance->m_RightGloveRawSkeleton.nodeInfos.data(), s_Instance->m_RightGloveRawSkeleton.nodeInfos.size());
+            if (ok != SDKReturnCode::SDKReturnCode_Success)
+            {
+                yError() << "Failed to get raw skeleton node info for right glove with ID: " << s_Instance->m_RightGloveRawSkeleton.info.gloveId;
             }
         }
     }
@@ -896,6 +1017,86 @@ std::string ManusGloveHelper::ConvertDeviceFamilyTypeToString(DeviceFamilyType p
     }
 }
 
+std::string manusGlove::ManusGloveHelper::ConvertChainTypeToString(ChainType p_Type)
+{
+    switch (p_Type)
+    {
+    case ChainType_FingerThumb:
+        return "Thumb";
+    case ChainType_FingerIndex:
+        return "Index";
+    case ChainType_FingerMiddle:
+        return "Middle";
+    case ChainType_FingerRing:
+        return "Ring";
+    case ChainType_FingerPinky:
+        return "Pinky";
+    case ChainType_Head:
+        return "Head";
+    case ChainType_Neck:
+        return "Neck";
+    case ChainType_Spine:
+        return "Spine";
+    case ChainType_Shoulder:
+        return "Shoulder";
+    case ChainType_Arm:
+        return "Arm";
+    case ChainType_Hand:
+        return "Hand";
+    case ChainType_Foot:
+        return "Foot";
+    case ChainType_Toe:
+        return "Toe";
+    case ChainType_Invalid:
+        return "Invalid";
+    case ChainType_Leg:
+        return "Leg";
+    default:
+        break;
+    }
+    return "Unknown";
+}
+
+inline std::string manusGlove::ManusGloveHelper::ConvertSideToString(Side p_Side)
+{
+    switch (p_Side)
+    {
+    case Side_Invalid:
+        return "Invalid";
+    case Side_Left:
+        return "Left";
+    case Side_Right:
+        return "Right";
+    case Side_Center:
+        return "Center";
+    default:
+        break;
+    }
+    return "Unknown";
+}
+
+std::string manusGlove::ManusGloveHelper::ConvertFingerJointTypeToString(FingerJointType p_Type)
+{
+    switch (p_Type)
+    {
+     case FingerJointType_Invalid:
+         return "Invalid";
+     case FingerJointType_Metacarpal:
+         return "Metacarpal";
+     case FingerJointType_Proximal:
+         return "Proximal";
+     case FingerJointType_Intermediate:
+         return "Intermediate";
+     case FingerJointType_Distal:
+         return "Distal";
+     case FingerJointType_Tip:
+         return "Tip";
+     default:
+         break;
+    }
+    return "Unknown";
+}
+
 bool ManusGloveHelper::CopyString(char *const p_Target, const size_t p_MaxLengthThatWillFitInTarget, const std::string &p_Source)
 {
     const errno_t t_CopyResult = strcpy_s(
@@ -929,10 +1130,20 @@ bool ManusGloveHelper::getHandJointPosition(std::vector<double>& jointAngleList,
     }
 
     float* data = p_isRightHand ? s_Instance->m_RightGloveErgoData.data : s_Instance->m_LeftGloveErgoData.data;
+    std::mutex* mutex = p_isRightHand ? &s_Instance->m_RightGloveErgoDataMutex : &s_Instance->m_LeftGloveErgoDataMutex;
 
-    for (size_t i = 0; i < m_Joints.size(); i++)
+    if (data == nullptr)
     {
-        jointAngleList[i] = RoundFloatValue(data[m_Joints[i]], 2);
+        yError() << ManusGlove_LogPrefix << "Data is null for the hand.";
+        return false;
+    }
+
+    std::lock_guard<std::mutex> lock(*mutex);
+    {
+        for (size_t i = 0; i < m_Joints.size(); i++)
+        {
+            jointAngleList[i] = RoundFloatValue(data[m_Joints[i]], 2);
+        }
     }
 
     return true;

@@ -18,6 +18,8 @@
 #include <yarp/os/RpcServer.h>
 #include <yarp/os/ResourceFinder.h>
 
+#include <yarp/dev/IFrameTransform.h>
+
 #include <assert.h>
 #include <cmath>
 #include <map>
@@ -82,6 +84,12 @@ public:
     std::string jointSensorPrefix;
     class ManusGloveVirtualJointKinSensor;
     std::vector<SensorPtr<ManusGloveVirtualJointKinSensor>> manusGloveJointSensorVector;
+
+    yarp::dev::IFrameTransform* frameTransformInterface = nullptr;
+    std::string palmFrameName;
+    Eigen::Matrix4f palmTransform;
+    std::vector<std::pair<std::string, Eigen::Matrix4f>> humanFingerTransforms;
+    yarp::sig::Matrix transformBuffer;
 
     // Constructor
     ManusGloveImpl();
@@ -271,6 +279,36 @@ bool ManusGlove::ManusGloveImpl::open(yarp::os::Searchable& config)
     humanJointState.resize(humanJointNameList.size(), 0);
     humanJointStateDeg.resize(humanJointNameList.size(), 0);
 
+    palmFrameName = config.check("palm_frame_name", yarp::os::Value("")).asString();
+
+    const std::string palmTransformName = "palm_transform";
+    palmTransform.setIdentity();
+    transformBuffer.resize(4, 4);
+    transformBuffer.zero();
+    transformBuffer(3, 3) = 1.0; // Set the last element to 1.0 for homogeneous coordinates
+    if (config.check(palmTransformName))
+    {
+        if (!config.find(palmTransformName).isList())
+        {
+            yError() << LogPrefix << "The palm_transform matrix should be a list!";
+            return false;
+        }
+        yarp::os::Bottle* palmTransformBottle = config.find(palmTransformName).asList();
+        if (palmTransformBottle->size() != 16)
+        {
+            yError() << LogPrefix << "The size of the palm_transform matrix is suposed to be 16! (size:"
+                << palmTransformBottle->size() << ")";
+            return false;
+        }
+        for (size_t i = 0; i < 4; i++)
+        {
+            for (size_t j = 0; j < 4; j++)
+            {
+                palmTransform(i, j) = palmTransformBottle->get(i * 4 + j).asFloat32();
+            }
+        }
+    }
+
     return true;
 }
 
@@ -290,6 +328,30 @@ bool ManusGlove::ManusGloveImpl::update()
     for (size_t i = 0; i < humanJointState.size(); i++)
     {
         humanJointState[i] = std::clamp(humanJointState[i], jointLimits[i].first, jointLimits[i].second) * EIGEN_PI / 180;
+    }
+
+    bool use_tf = frameTransformInterface != nullptr && !palmFrameName.empty();
+    if (use_tf)
+    {
+        pGlove->getHandRawSkeleton(humanFingerTransforms, handSide);
+        for (size_t i = 0; i < humanFingerTransforms.size(); i++)
+        {
+            Eigen::Matrix4f transform = palmTransform * humanFingerTransforms[i].second;
+
+            for (size_t i = 0; i < 3; ++i)
+            {
+                for (size_t j = 0; j < 4; ++j)
+                {
+                    transformBuffer(i, j) = transform(i, j);
+                }
+            }
+
+            bool ok = frameTransformInterface->setTransform(humanFingerTransforms[i].first, palmFrameName, transformBuffer);
+            if (!ok)
+            {
+                yWarning() << LogPrefix << "Failed to set transform for finger: " << humanFingerTransforms[i].first;
+            }
+        }
     }
 
     return true;
@@ -493,6 +555,49 @@ void ManusGlove::run()
 
     // to implement
     pImpl->update();
+}
+
+bool wearable::devices::ManusGlove::attach(yarp::dev::PolyDriver* poly)
+{
+    if (!poly) {
+        yError() << LogPrefix << "Passed PolyDriver is nullptr";
+        return false;
+    }
+
+    if (!(poly->view(pImpl->frameTransformInterface) && pImpl->frameTransformInterface)) {
+        yError() << LogPrefix << "Failed to view the IFrameTransform interface from the PolyDriver";
+        return false;
+    }
+
+    return true;
+}
+
+bool wearable::devices::ManusGlove::detach()
+{
+    pImpl->frameTransformInterface = nullptr;
+    return true;
+}
+
+bool wearable::devices::ManusGlove::attachAll(const yarp::dev::PolyDriverList& driverList)
+{
+    if (driverList.size() > 1) {
+        yError() << LogPrefix << "This wrapper accepts only one attached PolyDriver";
+        return false;
+    }
+
+    const yarp::dev::PolyDriverDescriptor* driver = driverList[0];
+
+    if (!driver) {
+        yError() << LogPrefix << "Passed PolyDriverDescriptor is nullptr";
+        return false;
+    }
+
+    return attach(driver->poly);
+}
+
+bool wearable::devices::ManusGlove::detachAll()
+{
+    return detach();
 }
 
 bool ManusGlove::close()

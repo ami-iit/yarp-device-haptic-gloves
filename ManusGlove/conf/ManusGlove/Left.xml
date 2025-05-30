@@ -74,6 +74,20 @@
                 0.0,
                 0.0)
         </param>
+        <param name="palm_frame_name">left_hand</param>
+        <param name="palm_transform">
+            (  1.0,  0.0,  0.0,  0.0,
+               0.0,  1.0,  0.0,  0.0,
+               0.0,  0.0,  1.0,  0.0,
+               0.0,  0.0,  0.0,  1.0)
+        </param>
+
+        <action phase="startup" level="3" type="attach">
+            <paramlist name="networks">
+                <elem name="TransformClientLabel">TransformClient</elem>
+            </paramlist>
+        </action>
+        <action phase="shutdown" level="3" type="detach"/>
     </device>
 
     <device type="iwear_wrapper" name="LeftHapticGloveWearableDeviceWrapper">
