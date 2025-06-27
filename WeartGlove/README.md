@@ -7,14 +7,14 @@
 1. Install the `WeArtGloveLib` following the instruction [here](https://github.com/ami-iit/WEART-SDK-Cpp#installation-cmake).
 2. Download and Install the latest WEARTMiddleware [link](https://weart.it/developer-guide/).
    - Latest tested version: v.2.3.0
-
+3. Install `bipedallocomotionframework` following the instruction in [this link](https://github.com/ami-iit/bipedal-locomotion-framework/?tab=readme-ov-file#package-install-with-conda-recommended)
 ### Parameters Manuals
 
 1. If you want to enable the haptic feedback, change the parameters below to `true`:
 
 ```text
 use_force_feedback
-use_temperature_feedback 
+use_temperature_feedback
 use_texture_feedback
 ```
 
