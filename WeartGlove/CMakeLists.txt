@@ -12,7 +12,7 @@ set(WeArtGloveDevName "WeArtGlove")
 
 find_package(${WeArtGloveLibName} REQUIRED)
 find_package(iDynTree REQUIRED)
-find_package(BipedalLocomotionFramework 0.9.0
+find_package(BipedalLocomotionFramework 0.21.0
   COMPONENTS VectorsCollection IK ParametersHandlerYarpImplementation
              ContinuousDynamicalSystem ManifConversions
              ParametersHandlerYarpImplementation REQUIRED)
