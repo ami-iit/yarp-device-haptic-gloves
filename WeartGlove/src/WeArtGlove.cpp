@@ -45,7 +45,7 @@
 #include <iDynTree/EigenHelpers.h>
 
 // blf headers
-#include <BipedalLocomotion/ContinuousDynamicalSystem/FloatingBaseSystemKinematics.h>
+#include <BipedalLocomotion/ContinuousDynamicalSystem/FloatingBaseSystemVelocityKinematics.h>
 #include <BipedalLocomotion/ContinuousDynamicalSystem/ForwardEuler.h>
 #include <BipedalLocomotion/Conversions/ManifConversions.h>
 #include <BipedalLocomotion/ParametersHandler/StdImplementation.h>
@@ -169,8 +169,8 @@ public:
     iDynTree::KinDynComputations kinDynComp;
 
     //Prepare the integrator
-    std::shared_ptr<ForwardEuler<FloatingBaseSystemKinematics>> integrator;
-    std::shared_ptr<FloatingBaseSystemKinematics> dynamics;
+    std::shared_ptr<ForwardEuler<FloatingBaseSystemVelocityKinematics>> integrator;
+    std::shared_ptr<FloatingBaseSystemVelocityKinematics> dynamics;
     std::shared_ptr<iDynTree::KinDynComputations> kinDyn;
     std::shared_ptr<BipedalLocomotion::IK::DistanceTask> thumbDistanceTaskptr;
     std::shared_ptr<BipedalLocomotion::IK::DistanceTask> indexDistanceTaskptr;
@@ -1446,14 +1446,14 @@ bool WeArtGlove::WeArtGloveImpl::prepareKinDynComputations()
 
     kinDyn->getRobotState(basePose, jointPositions, baseVelocity, jointVelocities, gravity);
 
-    dynamics = std::make_shared<FloatingBaseSystemKinematics>();
+    dynamics = std::make_shared<FloatingBaseSystemVelocityKinematics>();
 
     // initial state
     dynamics->setState({basePose.topRightCorner<3, 1>(),            // base postion
                         toManifRot(basePose.topLeftCorner<3, 3>()), // base rotation
                         jointPositions});                           // joint position
 
-    integrator = std::make_shared<ForwardEuler<FloatingBaseSystemKinematics>>();
+    integrator = std::make_shared<ForwardEuler<FloatingBaseSystemVelocityKinematics>>();
     integrator->setIntegrationStep(dT); // dt->period
     integrator->setDynamicalSystem(dynamics);
 
