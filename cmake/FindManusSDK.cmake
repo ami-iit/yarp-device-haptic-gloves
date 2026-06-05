@@ -5,13 +5,13 @@ include(FindPackageHandleStandardArgs)
 
 set(MANUS_ROOT_DIR "$ENV{ManusGlove_DIR}" CACHE PATH "Folder containing the ManusSDK")
 
-find_path(MANUS_INCLUDE_DIR ManusSDK.h PATHS ${MANUS_ROOT_DIR} PATH_SUFFIXES ManusSDK/include)
+find_path(MANUS_INCLUDE_DIR ManusSDK.h PATHS ${MANUS_ROOT_DIR} PATH_SUFFIXES ManusSDK/include NO_DEFAULT_PATH)
 if(UNIX)
   set(_manus_lib_name ManusSDK_Integrated)
 else()
   set(_manus_lib_name ManusSDK)
 endif()
-find_library(MANUS_LIBRARY ${_manus_lib_name} PATHS ${MANUS_ROOT_DIR} PATH_SUFFIXES ManusSDK ManusSDK/lib)
+find_library(MANUS_LIBRARY ${_manus_lib_name} PATHS ${MANUS_ROOT_DIR} PATH_SUFFIXES ManusSDK ManusSDK/lib NO_DEFAULT_PATH)
 
 find_package_handle_standard_args(ManusSDK DEFAULT_MSG MANUS_INCLUDE_DIR MANUS_LIBRARY)
 
