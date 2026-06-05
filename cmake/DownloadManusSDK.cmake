@@ -5,7 +5,7 @@ set(_manus_sdk_version "3.1.1")
 set(_manus_sdk_archive_name "MANUS_Core_${_manus_sdk_version}_SDK.zip")
 set(_manus_sdk_url "https://static.manus-meta.com/resources/manus_core_3/sdk/${_manus_sdk_archive_name}")
 
-set(_manus_sdk_base_dir "${CMAKE_BINARY_DIR}/manus-sdk")
+set(_manus_sdk_base_dir "${CMAKE_BINARY_DIR}")
 set(_manus_sdk_zip_path "${_manus_sdk_base_dir}/${_manus_sdk_archive_name}")
 set(_manus_sdk_extract_dir "${_manus_sdk_base_dir}")
 
@@ -20,7 +20,7 @@ set(_manus_sdk_header_marker "${_manus_sdk_client_dir}/ManusSDK/include/ManusSDK
 
 file(MAKE_DIRECTORY "${_manus_sdk_base_dir}")
 
-if(NOT EXISTS "${_manus_sdk_zip_path}")
+if(NOT EXISTS "${_manus_sdk_header_marker}")
   message(STATUS "Downloading Manus SDK ${_manus_sdk_version} from ${_manus_sdk_url}")
   file(DOWNLOAD
     "${_manus_sdk_url}"
@@ -34,9 +34,7 @@ if(NOT EXISTS "${_manus_sdk_zip_path}")
     list(GET _manus_sdk_download_status 1 _manus_sdk_download_message)
     message(FATAL_ERROR "Failed to download Manus SDK: ${_manus_sdk_download_message}")
   endif()
-endif()
 
-if(NOT EXISTS "${_manus_sdk_header_marker}")
   message(STATUS "Extracting Manus SDK archive ${_manus_sdk_zip_path}")
   execute_process(
     COMMAND ${CMAKE_COMMAND} -E tar xf "${_manus_sdk_zip_path}"
@@ -47,6 +45,8 @@ if(NOT EXISTS "${_manus_sdk_header_marker}")
   if(NOT _manus_sdk_extract_result EQUAL 0)
     message(FATAL_ERROR "Failed to extract Manus SDK archive: ${_manus_sdk_zip_path}")
   endif()
+
+  file(REMOVE "${_manus_sdk_zip_path}")
 endif()
 
 set(MANUS_ROOT_DIR
