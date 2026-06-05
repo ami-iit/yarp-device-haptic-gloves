@@ -11,6 +11,10 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
 set(ManusGloveDevName "ManusGlove")
 
+if(ENABLE_MANUS_SDK_DOWNLOAD)
+    include(DownloadManusSDK)
+endif()
+
 find_package(ManusSDK REQUIRED)
 
 # Export all symbols in Windows
