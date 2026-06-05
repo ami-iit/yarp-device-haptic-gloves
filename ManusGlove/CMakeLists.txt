@@ -64,6 +64,13 @@ yarp_install(TARGETS ${ManusGloveDevName}
              YARP_INI DESTINATION ${YARP_PLUGIN_MANIFESTS_INSTALL_DIR}
              )
 
+if(ENABLE_MANUS_SDK_DOWNLOAD)
+    get_target_property(_manus_sdk_lib_path ManusSDK::ManusSDK IMPORTED_LOCATION)
+    install(FILES "${_manus_sdk_lib_path}"
+            DESTINATION ${CMAKE_INSTALL_LIBDIR}
+            COMPONENT runtime)
+endif()
+
 set (MAIN_XML_FILES conf/ManusGlove.xml)
 
 set (HANDS_XML_FILES conf/ManusGlove/Right.xml
