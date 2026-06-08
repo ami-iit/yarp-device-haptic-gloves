@@ -50,11 +50,13 @@ Now you can run:
 
 ### Install the device
 
+When running the `cmake` commands below, make sure to set the right `CMAKE_INSTALL_PREFIX`. If you are using the `robotology-superbuild`, point it to the superbuild install prefix.
+If you are using a conda environment, you can use $CONDA_PREFIX as the install prefix (as in the examples below).
+
 You can build ManusGlove in two ways.
 
 1. Automatic SDK download (recommended)
 
-No manual SDK setup is needed. CMake downloads and prepares the SDK for you.
 
 ```bash
 mkdir build && cd build
@@ -78,15 +80,17 @@ Examples:
 -DMANUS_SDK_DOWNLOAD_VERSION=2.5.1
 ```
 
+If you downloaded the SDK during the build, the install step also places the ManusSDK runtime libraries in `<INSTALL_PREFIX>/lib`.
+
+
 2. Manual SDK setup
 
 If you prefer to provide the SDK yourself, export:
 
 ```bash
 export ManusGlove_DIR=<PATH_TO>/ManusSDK_v3.1.1/SDKClient_Linux
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$ManusGlove_DIR$/ManusSDK/lib
 ```
-
-Then configure without the download flag:
 
 ```bash
 mkdir build && cd build
@@ -100,8 +104,6 @@ make -j
 make install
 ```
 
-### Run the device
-After installation, the device and the `yarprobotinterface` config `.xml` should now be installed in the correct `YARP_DATA_DIRS`.
 If you installed in a non-system prefix, export:
 
 ```bash
@@ -109,8 +111,8 @@ export YARP_DATA_DIRS=$YARP_DATA_DIRS:<INSTALL_PREFIX>/share/yarp
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:<INSTALL_PREFIX>/lib
 ```
 
-The install step also places the ManusSDK runtime libraries in `<INSTALL_PREFIX>/lib`.
-
+### Run the device
+After installation, the device and the `yarprobotinterface` config `.xml` should now be installed in the correct `YARP_DATA_DIRS`.
 You can launch:
 ```bash
 yarprobotinterface --config ManusGlove.xml
