@@ -5,7 +5,15 @@ on:
     branches:
       - main
       - master
+    paths:
+      - 'ManusGlove/**'
+      - '!ManusGlove/**/*.md'
+      - '!ManusGlove/**/*.xml'
   pull_request:
+    paths:
+      - 'ManusGlove/**'
+      - '!ManusGlove/**/*.md'
+      - '!ManusGlove/**/*.xml'
   workflow_dispatch:
 
 jobs:
