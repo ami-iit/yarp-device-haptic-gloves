@@ -3,7 +3,11 @@
 
 set(MANUS_SDK_DOWNLOAD_VERSION "3.1.1" CACHE STRING "Manus SDK version to download")
 set(_manus_sdk_archive_name "MANUS_Core_${MANUS_SDK_DOWNLOAD_VERSION}_SDK.zip")
-set(_manus_sdk_url "https://static.manus-meta.com/resources/manus_core_3/sdk/${_manus_sdk_archive_name}")
+if(MANUS_SDK_DOWNLOAD_VERSION VERSION_LESS "3.0.0")
+  set(_manus_sdk_url "https://static.manus-meta.com/resources/manus_core_2/sdk/${_manus_sdk_archive_name}")
+else()
+  set(_manus_sdk_url "https://static.manus-meta.com/resources/manus_core_3/sdk/${_manus_sdk_archive_name}")
+endif()
 
 set(_manus_sdk_base_dir "${CMAKE_BINARY_DIR}")
 set(_manus_sdk_zip_path "${_manus_sdk_base_dir}/${_manus_sdk_archive_name}")
@@ -46,7 +50,29 @@ if(NOT EXISTS "${_manus_sdk_header_marker}")
     message(FATAL_ERROR "Failed to extract Manus SDK archive: ${_manus_sdk_zip_path}")
   endif()
 
-  file(REMOVE "${_manus_sdk_zip_path}")
+  if(MANUS_SDK_DOWNLOAD_VERSION VERSION_LESS "3.0.0")
+    set(_manus_sdk_nested_zip_path "${_manus_sdk_base_dir}/SDKClient.zip")
+    set(_manus_sdk_nested_extract_dir "${_manus_sdk_extract_dir}/ManusSDK_v${MANUS_SDK_DOWNLOAD_VERSION}")
+
+    if(NOT EXISTS "${_manus_sdk_nested_zip_path}")
+      message(FATAL_ERROR "Expected nested SDKClient.zip for Manus SDK ${MANUS_SDK_DOWNLOAD_VERSION}, but none was found.")
+    endif()
+
+    file(MAKE_DIRECTORY "${_manus_sdk_nested_extract_dir}")
+
+    message(STATUS "Extracting nested Manus SDK archive ${_manus_sdk_nested_zip_path}")
+    execute_process(
+      COMMAND ${CMAKE_COMMAND} -E tar xf "${_manus_sdk_nested_zip_path}"
+      WORKING_DIRECTORY "${_manus_sdk_nested_extract_dir}"
+      RESULT_VARIABLE _manus_sdk_nested_extract_result
+    )
+
+    if(NOT _manus_sdk_nested_extract_result EQUAL 0)
+      message(FATAL_ERROR "Failed to extract nested Manus SDK archive: ${_manus_sdk_nested_zip_path}")
+    endif()
+  endif()
+
+  #file(REMOVE "${_manus_sdk_zip_path}")
 endif()
 
 set(MANUS_ROOT_DIR
