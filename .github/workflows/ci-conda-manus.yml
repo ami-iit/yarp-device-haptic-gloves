@@ -1,0 +1,89 @@
+name: manus-build
+
+on:
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - 'ManusGlove/**'
+      - '!ManusGlove/**/*.md'
+      - '!ManusGlove/**/*.xml'
+  pull_request:
+    paths:
+      - 'ManusGlove/**'
+      - '!ManusGlove/**/*.md'
+      - '!ManusGlove/**/*.xml'
+  workflow_dispatch:
+
+jobs:
+  build-manus:
+    name: ${{ matrix.os }} / Manus SDK ${{ matrix.manus_sdk_version }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            manus_sdk_version: "2.5.1"
+          - os: ubuntu-latest
+            manus_sdk_version: "3.1.1"
+          - os: windows-latest
+            manus_sdk_version: "2.5.1"
+          - os: windows-latest
+            manus_sdk_version: "3.1.1"
+    defaults:
+      run:
+        shell: bash -el {0}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup MSVC toolchain (Windows)
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Setup micromamba environment
+        uses: mamba-org/setup-micromamba@v2
+        with:
+          environment-name: yarp-device-haptic-gloves-ci
+          cache-environment: true
+          create-args: >-
+            python=3.11
+            cmake
+            ninja
+            pkg-config
+            compilers
+            eigen
+            yarp
+            human-dynamics-estimation
+
+      - name: Configure
+        run: |
+          if [[ "${RUNNER_OS}" == "Windows" ]]; then
+            cmake -S . -B build \
+              -G Ninja \
+              -DCMAKE_BUILD_TYPE=Release \
+              -DCMAKE_INSTALL_PREFIX="${CONDA_PREFIX}" \
+              -DCMAKE_C_COMPILER=cl \
+              -DCMAKE_CXX_COMPILER=cl \
+              -DYARP_DEVICE_MANUS_GLOVE_ENABLE=ON \
+              -DENABLE_MANUS_SDK_DOWNLOAD=ON \
+              -DMANUS_SDK_DOWNLOAD_VERSION="${{ matrix.manus_sdk_version }}"
+          else
+            cmake -S . -B build \
+              -G Ninja \
+              -DCMAKE_BUILD_TYPE=Release \
+              -DCMAKE_INSTALL_PREFIX="${CONDA_PREFIX}" \
+              -DYARP_DEVICE_MANUS_GLOVE_ENABLE=ON \
+              -DENABLE_MANUS_SDK_DOWNLOAD=ON \
+              -DMANUS_SDK_DOWNLOAD_VERSION="${{ matrix.manus_sdk_version }}"
+          fi
+
+
+      - name: Build
+        run: cmake --build build --parallel
+
+      - name: Install
+        run: cmake --install build

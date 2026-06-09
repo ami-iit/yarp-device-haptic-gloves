@@ -50,17 +50,48 @@ Now you can run:
 
 ### Install the device
 
-Export the environmental variables:
+When running the `cmake` commands below, make sure to set the right `CMAKE_INSTALL_PREFIX`. If you are using the `robotology-superbuild`, point it to the superbuild install prefix.
+If you are using a conda environment, you can use $CONDA_PREFIX as the install prefix (as in the examples below).
+
+You can build ManusGlove in two ways.
+
+1. Automatic SDK download (recommended)
+
+
+```bash
+mkdir build && cd build
+cmake .. \
+	-DCMAKE_INSTALL_PREFIX=$CONDA_PREFIX \
+	-DYARP_DEVICE_MANUS_GLOVE_ENABLE=ON \
+	-DENABLE_MANUS_SDK_DOWNLOAD=ON
+```
+
+The default downloaded version is `3.1.1`.
+If you want a different version, add:
+
+```bash
+-DMANUS_SDK_DOWNLOAD_VERSION=<version>
+```
+
+Examples:
+
+```bash
+-DMANUS_SDK_DOWNLOAD_VERSION=3.1.1
+-DMANUS_SDK_DOWNLOAD_VERSION=2.5.1
+```
+
+If you downloaded the SDK during the build, the install step also places the ManusSDK runtime libraries in `<INSTALL_PREFIX>/lib`.
+
+
+2. Manual SDK setup
+
+If you prefer to provide the SDK yourself, export:
 
 ```bash
 export ManusGlove_DIR=<PATH_TO>/ManusSDK_v3.1.1/SDKClient_Linux
-```
-```bash
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$ManusGlove_DIR$/ManusSDK/lib
 ```
 
-Run `cmake`, make sure to set the right `CMAKE_INSTALL_PREFIX`. If you are using the `superbuild`, point to the superbuild install prefix. 
-If you are using a conda environment, you can use: 
 ```bash
 mkdir build && cd build
 cmake .. -DCMAKE_INSTALL_PREFIX=$CONDA_PREFIX -DYARP_DEVICE_MANUS_GLOVE_ENABLE=ON
@@ -71,6 +102,13 @@ If you are not using the `superbuild`, build and install:
 ```bash
 make -j
 make install
+```
+
+If you installed in a non-system prefix, export:
+
+```bash
+export YARP_DATA_DIRS=$YARP_DATA_DIRS:<INSTALL_PREFIX>/share/yarp
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:<INSTALL_PREFIX>/lib
 ```
 
 ### Run the device

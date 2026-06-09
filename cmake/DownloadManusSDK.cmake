@@ -1,0 +1,84 @@
+# SPDX-FileCopyrightText: Fondazione Istituto Italiano di Tecnologia (IIT)
+# SPDX-License-Identifier: BSD-3-Clause
+
+set(MANUS_SDK_DOWNLOAD_VERSION "3.1.1" CACHE STRING "Manus SDK version to download")
+set(_manus_sdk_archive_name "MANUS_Core_${MANUS_SDK_DOWNLOAD_VERSION}_SDK.zip")
+if(MANUS_SDK_DOWNLOAD_VERSION VERSION_LESS "3.0.0")
+  set(_manus_sdk_url "https://static.manus-meta.com/resources/manus_core_2/sdk/${_manus_sdk_archive_name}")
+else()
+  set(_manus_sdk_url "https://static.manus-meta.com/resources/manus_core_3/sdk/${_manus_sdk_archive_name}")
+endif()
+
+set(_manus_sdk_base_dir "${CMAKE_BINARY_DIR}")
+set(_manus_sdk_zip_path "${_manus_sdk_base_dir}/${_manus_sdk_archive_name}")
+set(_manus_sdk_extract_dir "${_manus_sdk_base_dir}")
+
+if(UNIX)
+  set(_manus_sdk_client_dir "${_manus_sdk_extract_dir}/ManusSDK_v${MANUS_SDK_DOWNLOAD_VERSION}/SDKClient_Linux")
+else()
+  set(_manus_sdk_client_dir "${_manus_sdk_extract_dir}/ManusSDK_v${MANUS_SDK_DOWNLOAD_VERSION}/SDKClient_Windows")
+endif()
+
+# Header location is used as extraction marker so repeated configure runs are idempotent.
+set(_manus_sdk_header_marker "${_manus_sdk_client_dir}/ManusSDK/include/ManusSDK.h")
+
+file(MAKE_DIRECTORY "${_manus_sdk_base_dir}")
+
+if(NOT EXISTS "${_manus_sdk_header_marker}")
+  message(STATUS "Downloading Manus SDK ${MANUS_SDK_DOWNLOAD_VERSION} from ${_manus_sdk_url}")
+  file(DOWNLOAD
+    "${_manus_sdk_url}"
+    "${_manus_sdk_zip_path}"
+    SHOW_PROGRESS
+    STATUS _manus_sdk_download_status
+  )
+
+  list(GET _manus_sdk_download_status 0 _manus_sdk_download_code)
+  if(NOT _manus_sdk_download_code EQUAL 0)
+    list(GET _manus_sdk_download_status 1 _manus_sdk_download_message)
+    message(FATAL_ERROR "Failed to download Manus SDK: ${_manus_sdk_download_message}")
+  endif()
+
+  message(STATUS "Extracting Manus SDK archive ${_manus_sdk_zip_path}")
+  execute_process(
+    COMMAND ${CMAKE_COMMAND} -E tar xf "${_manus_sdk_zip_path}"
+    WORKING_DIRECTORY "${_manus_sdk_base_dir}"
+    RESULT_VARIABLE _manus_sdk_extract_result
+  )
+
+  if(NOT _manus_sdk_extract_result EQUAL 0)
+    message(FATAL_ERROR "Failed to extract Manus SDK archive: ${_manus_sdk_zip_path}")
+  endif()
+
+  if(MANUS_SDK_DOWNLOAD_VERSION VERSION_LESS "3.0.0")
+    set(_manus_sdk_nested_zip_path "${_manus_sdk_base_dir}/SDKClient.zip")
+    set(_manus_sdk_nested_extract_dir "${_manus_sdk_extract_dir}/ManusSDK_v${MANUS_SDK_DOWNLOAD_VERSION}")
+
+    if(NOT EXISTS "${_manus_sdk_nested_zip_path}")
+      message(FATAL_ERROR "Expected nested SDKClient.zip for Manus SDK ${MANUS_SDK_DOWNLOAD_VERSION}, but none was found.")
+    endif()
+
+    file(MAKE_DIRECTORY "${_manus_sdk_nested_extract_dir}")
+
+    message(STATUS "Extracting nested Manus SDK archive ${_manus_sdk_nested_zip_path}")
+    execute_process(
+      COMMAND ${CMAKE_COMMAND} -E tar xf "${_manus_sdk_nested_zip_path}"
+      WORKING_DIRECTORY "${_manus_sdk_nested_extract_dir}"
+      RESULT_VARIABLE _manus_sdk_nested_extract_result
+    )
+
+    if(NOT _manus_sdk_nested_extract_result EQUAL 0)
+      message(FATAL_ERROR "Failed to extract nested Manus SDK archive: ${_manus_sdk_nested_zip_path}")
+    endif()
+  endif()
+
+  #file(REMOVE "${_manus_sdk_zip_path}")
+endif()
+
+set(MANUS_ROOT_DIR
+    "${_manus_sdk_client_dir}"
+    CACHE PATH "Folder containing the ManusSDK"
+    FORCE)
+
+message(STATUS "Downloaded Manus SDK ${MANUS_SDK_DOWNLOAD_VERSION} to ${MANUS_ROOT_DIR}")
+message(STATUS "Using Manus SDK ${MANUS_SDK_DOWNLOAD_VERSION} from ${MANUS_ROOT_DIR}")
