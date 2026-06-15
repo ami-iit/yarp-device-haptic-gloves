@@ -57,6 +57,27 @@ target_link_libraries(${ManusGloveDevName}
     Eigen3::Eigen
     )
 
+# Copy the ManusSDK runtime into the build tree so local runs do not depend on
+# the original SDK location.
+if(UNIX)
+    get_target_property(_manus_sdk_runtime_path ManusSDK::ManusSDK IMPORTED_LOCATION)
+    set(_manus_sdk_build_copy_dest "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}")
+    set(_manus_sdk_install_dest "${CMAKE_INSTALL_LIBDIR}")
+    # Ensure build-tree runtime lookup can resolve the copied SDK in build/lib.
+    set_property(TARGET ${ManusGloveDevName} APPEND PROPERTY
+                 BUILD_RPATH "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}")
+else()
+    set(_manus_sdk_runtime_path "${MANUS_RUNTIME_DLL}")
+    set(_manus_sdk_build_copy_dest "$<TARGET_FILE_DIR:${ManusGloveDevName}>")
+    set(_manus_sdk_install_dest "${CMAKE_INSTALL_BINDIR}")
+endif()
+
+add_custom_command(TARGET ${ManusGloveDevName} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${_manus_sdk_runtime_path}"
+            "${_manus_sdk_build_copy_dest}"
+    COMMENT "Copying ManusSDK runtime to build output")
+
 yarp_install(TARGETS ${ManusGloveDevName}
              COMPONENT runtime
              LIBRARY DESTINATION ${YARP_DYNAMIC_PLUGINS_INSTALL_DIR}
@@ -65,19 +86,10 @@ yarp_install(TARGETS ${ManusGloveDevName}
              )
 
 # Install the ManusSDK runtime library unconditionally so the installed plugin
-# can resolve it at runtime without depending on the build tree.
-if(UNIX)
-    get_target_property(_manus_sdk_lib_path ManusSDK::ManusSDK IMPORTED_LOCATION)
-    install(FILES "${_manus_sdk_lib_path}"
-            DESTINATION ${CMAKE_INSTALL_LIBDIR}
-            COMPONENT runtime)
-else()
-    # On Windows install the runtime DLL next to the other executables/DLLs so
-    # it is on the default DLL search path.
-    install(FILES "${MANUS_RUNTIME_DLL}"
-            DESTINATION ${CMAKE_INSTALL_BINDIR}
-            COMPONENT runtime)
-endif()
+# can resolve it without depending on the build tree.
+install(FILES "${_manus_sdk_runtime_path}"
+    DESTINATION ${_manus_sdk_install_dest}
+    COMPONENT runtime)
 
 set (MAIN_XML_FILES conf/ManusGlove.xml)
 
