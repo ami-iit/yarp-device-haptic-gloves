@@ -64,10 +64,18 @@ yarp_install(TARGETS ${ManusGloveDevName}
              YARP_INI DESTINATION ${YARP_PLUGIN_MANIFESTS_INSTALL_DIR}
              )
 
-if(ENABLE_MANUS_SDK_DOWNLOAD)
+# Install the ManusSDK runtime library unconditionally so the installed plugin
+# can resolve it at runtime without depending on the build tree.
+if(UNIX)
     get_target_property(_manus_sdk_lib_path ManusSDK::ManusSDK IMPORTED_LOCATION)
     install(FILES "${_manus_sdk_lib_path}"
             DESTINATION ${CMAKE_INSTALL_LIBDIR}
+            COMPONENT runtime)
+else()
+    # On Windows install the runtime DLL next to the other executables/DLLs so
+    # it is on the default DLL search path.
+    install(FILES "${MANUS_RUNTIME_DLL}"
+            DESTINATION ${CMAKE_INSTALL_BINDIR}
             COMPONENT runtime)
 endif()
 
