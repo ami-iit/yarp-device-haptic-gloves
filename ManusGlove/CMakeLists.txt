@@ -69,7 +69,10 @@ if(UNIX)
 else()
     set(_manus_sdk_runtime_path "${MANUS_RUNTIME_DLL}")
     set(_manus_sdk_build_copy_dest "$<TARGET_FILE_DIR:${ManusGloveDevName}>")
-    set(_manus_sdk_install_dest "${CMAKE_INSTALL_BINDIR}")
+    # Install the SDK DLL co-located with the plugin so Windows DLL search
+    # (which starts from the loading module's directory) resolves it without
+    # requiring the SDK path to be on PATH.
+    set(_manus_sdk_install_dest "${YARP_DYNAMIC_PLUGINS_INSTALL_DIR}")
 endif()
 
 add_custom_command(TARGET ${ManusGloveDevName} POST_BUILD
