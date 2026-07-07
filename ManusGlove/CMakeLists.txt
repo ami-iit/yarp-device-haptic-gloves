@@ -7,15 +7,14 @@
 project(YARPManusGlove VERSION "0.0.1"
                   LANGUAGES CXX C)
 
-list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
 set(ManusGloveDevName "ManusGlove")
 
 if(ENABLE_MANUS_SDK_DOWNLOAD)
     include(DownloadManusSDK)
+else()
+    find_package(ManusSDK REQUIRED)
 endif()
-
-find_package(ManusSDK REQUIRED)
 
 # Export all symbols in Windows
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
@@ -63,13 +62,6 @@ yarp_install(TARGETS ${ManusGloveDevName}
              ARCHIVE DESTINATION ${YARP_STATIC_PLUGINS_INSTALL_DIR}
              YARP_INI DESTINATION ${YARP_PLUGIN_MANIFESTS_INSTALL_DIR}
              )
-
-if(ENABLE_MANUS_SDK_DOWNLOAD)
-    get_target_property(_manus_sdk_lib_path ManusSDK::ManusSDK IMPORTED_LOCATION)
-    install(FILES "${_manus_sdk_lib_path}"
-            DESTINATION ${CMAKE_INSTALL_LIBDIR}
-            COMPONENT runtime)
-endif()
 
 set (MAIN_XML_FILES conf/ManusGlove.xml)
 
