@@ -34,6 +34,20 @@ endif()
 file(GLOB _manus_sdk_top_level RELATIVE "${_MANUS_SDK_EXTRACT_ROOT}" "${_MANUS_SDK_EXTRACT_ROOT}/*")
 message(STATUS "ManusSDK extracted contents: ${_manus_sdk_top_level}")
 
+# Handle nested SDKClient.zip for older SDK versions (< 3.0.0)
+set(_manus_sdk_nested_zip "${_MANUS_SDK_EXTRACT_ROOT}/SDKClient.zip")
+if(EXISTS "${_manus_sdk_nested_zip}")
+  message(STATUS "Extracting nested SDKClient.zip")
+  execute_process(
+    COMMAND ${CMAKE_COMMAND} -E tar xf "${_manus_sdk_nested_zip}"
+    WORKING_DIRECTORY "${_MANUS_SDK_EXTRACT_ROOT}"
+    RESULT_VARIABLE _manus_sdk_nested_extract_result
+  )
+  if(NOT _manus_sdk_nested_extract_result EQUAL 0)
+    message(FATAL_ERROR "Failed to extract nested SDKClient.zip")
+  endif()
+endif()
+
 # The archive structure does not have a versioned subdirectory, SDKClient_* are at the root
 if(UNIX)
   set(_manus_sdk_client_dir "${_MANUS_SDK_EXTRACT_ROOT}/SDKClient_Linux")
