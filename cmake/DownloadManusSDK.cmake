@@ -7,6 +7,31 @@ include(FetchContent)
 set(MANUS_SDK_DOWNLOAD_VERSION "3.1.1" CACHE STRING "Manus SDK version to download")
 set(_manus_sdk_archive_name "MANUS_Core_${MANUS_SDK_DOWNLOAD_VERSION}_SDK.zip")
 
+# Version-specific SHA256 hashes for integrity verification
+# Note: Update these hashes when adding support for new SDK versions
+set(_manus_sdk_version_hashes
+    "2.5.1=SHA256=7384c08e493ea2077fe7038701f47881f05c4b37e7f9c621fc0fcf285718da72"
+    "3.1.1=SHA256=c5ccd3c42a501107ec79f70d8450a486fbc3925c5c1e18e606114d09f2d9d24a"
+)
+
+set(_manus_sdk_url_hash "")
+foreach(_hash_entry ${_manus_sdk_version_hashes})
+    string(REGEX MATCH "^([^=]+)=(.+)$" _hash_matched "${_hash_entry}")
+    if(CMAKE_MATCH_1 STREQUAL MANUS_SDK_DOWNLOAD_VERSION)
+        set(_manus_sdk_url_hash "${CMAKE_MATCH_2}")
+        break()
+    endif()
+endforeach()
+
+if(NOT _manus_sdk_url_hash)
+  message(FATAL_ERROR 
+    "ManusSDK version ${MANUS_SDK_DOWNLOAD_VERSION} is not supported.\n"
+    "Supported versions are:\n"
+    "  - 2.5.1\n"
+    "  - 3.1.1\n"
+    "Please set MANUS_SDK_DOWNLOAD_VERSION to one of the supported versions.")
+endif()
+
 if(MANUS_SDK_DOWNLOAD_VERSION VERSION_LESS "3.0.0")
   set(_manus_sdk_url "https://static.manus-meta.com/resources/manus_core_2/sdk/${_manus_sdk_archive_name}")
 else()
@@ -17,6 +42,7 @@ endif()
 FetchContent_Declare(
     ManusSDK
     URL ${_manus_sdk_url}
+    URL_HASH ${_manus_sdk_url_hash}
     SOURCE_DIR ${CMAKE_BINARY_DIR}/_deps/manussdk-src
     DOWNLOAD_EXTRACT_TIMESTAMP TRUE
 )
