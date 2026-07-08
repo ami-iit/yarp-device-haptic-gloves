@@ -1,84 +1,193 @@
 # SPDX-FileCopyrightText: Fondazione Istituto Italiano di Tecnologia (IIT)
 # SPDX-License-Identifier: BSD-3-Clause
 
+include(FetchContent)
+
+# Configuration for Manus SDK download
 set(MANUS_SDK_DOWNLOAD_VERSION "3.1.1" CACHE STRING "Manus SDK version to download")
 set(_manus_sdk_archive_name "MANUS_Core_${MANUS_SDK_DOWNLOAD_VERSION}_SDK.zip")
+
+# Version-specific SHA256 hashes for integrity verification
+# Note: Update these hashes when adding support for new SDK versions
+set(_manus_sdk_version_hashes
+    "2.5.1=SHA256=7384c08e493ea2077fe7038701f47881f05c4b37e7f9c621fc0fcf285718da72"
+    "3.1.1=SHA256=c5ccd3c42a501107ec79f70d8450a486fbc3925c5c1e18e606114d09f2d9d24a"
+)
+
+set(_manus_sdk_url_hash "")
+foreach(_hash_entry ${_manus_sdk_version_hashes})
+    string(REGEX MATCH "^([^=]+)=(.+)$" _hash_matched "${_hash_entry}")
+    if(CMAKE_MATCH_1 STREQUAL MANUS_SDK_DOWNLOAD_VERSION)
+        set(_manus_sdk_url_hash "${CMAKE_MATCH_2}")
+        break()
+    endif()
+endforeach()
+
+if(NOT _manus_sdk_url_hash)
+  message(FATAL_ERROR 
+    "ManusSDK version ${MANUS_SDK_DOWNLOAD_VERSION} is not supported.\n"
+    "Supported versions are:\n"
+    "  - 2.5.1\n"
+    "  - 3.1.1\n"
+    "Please set MANUS_SDK_DOWNLOAD_VERSION to one of the supported versions.")
+endif()
+
 if(MANUS_SDK_DOWNLOAD_VERSION VERSION_LESS "3.0.0")
   set(_manus_sdk_url "https://static.manus-meta.com/resources/manus_core_2/sdk/${_manus_sdk_archive_name}")
 else()
   set(_manus_sdk_url "https://static.manus-meta.com/resources/manus_core_3/sdk/${_manus_sdk_archive_name}")
 endif()
 
-set(_manus_sdk_base_dir "${CMAKE_BINARY_DIR}")
-set(_manus_sdk_zip_path "${_manus_sdk_base_dir}/${_manus_sdk_archive_name}")
-set(_manus_sdk_extract_dir "${_manus_sdk_base_dir}")
+# Fetch ManusSDK from the official Manus static server
+FetchContent_Declare(
+    ManusSDK
+    URL ${_manus_sdk_url}
+    URL_HASH ${_manus_sdk_url_hash}
+    SOURCE_DIR ${CMAKE_BINARY_DIR}/_deps/manussdk-src
+    DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+)
 
-if(UNIX)
-  set(_manus_sdk_client_dir "${_manus_sdk_extract_dir}/ManusSDK_v${MANUS_SDK_DOWNLOAD_VERSION}/SDKClient_Linux")
-else()
-  set(_manus_sdk_client_dir "${_manus_sdk_extract_dir}/ManusSDK_v${MANUS_SDK_DOWNLOAD_VERSION}/SDKClient_Windows")
+FetchContent_MakeAvailable(ManusSDK)
+
+# Determine the SDK client directory based on platform
+set(_MANUS_SDK_EXTRACT_ROOT ${CMAKE_BINARY_DIR}/_deps/manussdk-src)
+
+# Debug: List the contents of the extracted directory
+if(NOT EXISTS "${_MANUS_SDK_EXTRACT_ROOT}")
+  message(FATAL_ERROR "ManusSDK extraction directory not found: ${_MANUS_SDK_EXTRACT_ROOT}")
 endif()
 
-# Header location is used as extraction marker so repeated configure runs are idempotent.
-set(_manus_sdk_header_marker "${_manus_sdk_client_dir}/ManusSDK/include/ManusSDK.h")
+file(GLOB _manus_sdk_top_level RELATIVE "${_MANUS_SDK_EXTRACT_ROOT}" "${_MANUS_SDK_EXTRACT_ROOT}/*")
+message(STATUS "ManusSDK extracted contents: ${_manus_sdk_top_level}")
 
-file(MAKE_DIRECTORY "${_manus_sdk_base_dir}")
-
-if(NOT EXISTS "${_manus_sdk_header_marker}")
-  message(STATUS "Downloading Manus SDK ${MANUS_SDK_DOWNLOAD_VERSION} from ${_manus_sdk_url}")
-  file(DOWNLOAD
-    "${_manus_sdk_url}"
-    "${_manus_sdk_zip_path}"
-    SHOW_PROGRESS
-    STATUS _manus_sdk_download_status
-  )
-
-  list(GET _manus_sdk_download_status 0 _manus_sdk_download_code)
-  if(NOT _manus_sdk_download_code EQUAL 0)
-    list(GET _manus_sdk_download_status 1 _manus_sdk_download_message)
-    message(FATAL_ERROR "Failed to download Manus SDK: ${_manus_sdk_download_message}")
-  endif()
-
-  message(STATUS "Extracting Manus SDK archive ${_manus_sdk_zip_path}")
+# Handle nested SDKClient.zip for older SDK versions (< 3.0.0)
+set(_manus_sdk_nested_zip "${_MANUS_SDK_EXTRACT_ROOT}/SDKClient.zip")
+if(EXISTS "${_manus_sdk_nested_zip}")
+  message(STATUS "Extracting nested SDKClient.zip")
   execute_process(
-    COMMAND ${CMAKE_COMMAND} -E tar xf "${_manus_sdk_zip_path}"
-    WORKING_DIRECTORY "${_manus_sdk_base_dir}"
-    RESULT_VARIABLE _manus_sdk_extract_result
+    COMMAND ${CMAKE_COMMAND} -E tar xf "${_manus_sdk_nested_zip}"
+    WORKING_DIRECTORY "${_MANUS_SDK_EXTRACT_ROOT}"
+    RESULT_VARIABLE _manus_sdk_nested_extract_result
   )
-
-  if(NOT _manus_sdk_extract_result EQUAL 0)
-    message(FATAL_ERROR "Failed to extract Manus SDK archive: ${_manus_sdk_zip_path}")
+  if(NOT _manus_sdk_nested_extract_result EQUAL 0)
+    message(FATAL_ERROR "Failed to extract nested SDKClient.zip")
   endif()
-
-  if(MANUS_SDK_DOWNLOAD_VERSION VERSION_LESS "3.0.0")
-    set(_manus_sdk_nested_zip_path "${_manus_sdk_base_dir}/SDKClient.zip")
-    set(_manus_sdk_nested_extract_dir "${_manus_sdk_extract_dir}/ManusSDK_v${MANUS_SDK_DOWNLOAD_VERSION}")
-
-    if(NOT EXISTS "${_manus_sdk_nested_zip_path}")
-      message(FATAL_ERROR "Expected nested SDKClient.zip for Manus SDK ${MANUS_SDK_DOWNLOAD_VERSION}, but none was found.")
-    endif()
-
-    file(MAKE_DIRECTORY "${_manus_sdk_nested_extract_dir}")
-
-    message(STATUS "Extracting nested Manus SDK archive ${_manus_sdk_nested_zip_path}")
-    execute_process(
-      COMMAND ${CMAKE_COMMAND} -E tar xf "${_manus_sdk_nested_zip_path}"
-      WORKING_DIRECTORY "${_manus_sdk_nested_extract_dir}"
-      RESULT_VARIABLE _manus_sdk_nested_extract_result
-    )
-
-    if(NOT _manus_sdk_nested_extract_result EQUAL 0)
-      message(FATAL_ERROR "Failed to extract nested Manus SDK archive: ${_manus_sdk_nested_zip_path}")
-    endif()
-  endif()
-
-  #file(REMOVE "${_manus_sdk_zip_path}")
 endif()
 
-set(MANUS_ROOT_DIR
-    "${_manus_sdk_client_dir}"
-    CACHE PATH "Folder containing the ManusSDK"
-    FORCE)
+# The archive structure does not have a versioned subdirectory, SDKClient_* are at the root
+if(UNIX)
+  set(_manus_sdk_client_dir "${_MANUS_SDK_EXTRACT_ROOT}/SDKClient_Linux")
+else()
+  set(_manus_sdk_client_dir "${_MANUS_SDK_EXTRACT_ROOT}/SDKClient_Windows")
+endif()
 
-message(STATUS "Downloaded Manus SDK ${MANUS_SDK_DOWNLOAD_VERSION} to ${MANUS_ROOT_DIR}")
-message(STATUS "Using Manus SDK ${MANUS_SDK_DOWNLOAD_VERSION} from ${MANUS_ROOT_DIR}")
+# Verify the client directory exists
+if(NOT EXISTS "${_manus_sdk_client_dir}")
+  message(FATAL_ERROR "ManusSDK client directory not found at: ${_manus_sdk_client_dir}\nPlease verify the SDK version and archive structure.")
+endif()
+
+# Create an imported target for ManusSDK since it's a prebuilt binary SDK
+add_library(ManusSDK::ManusSDK SHARED IMPORTED GLOBAL)
+
+if(WIN32)
+    if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+        set(_MANUS_SDK_ARCH x64)
+    else()
+        set(_MANUS_SDK_ARCH x86)
+    endif()
+    
+    set(_MANUS_SDK_DLL "${_manus_sdk_client_dir}/ManusSDK/lib/ManusSDK.dll")
+    set(_MANUS_SDK_LIB "${_manus_sdk_client_dir}/ManusSDK/lib/ManusSDK.lib")
+    set(_MANUS_SDK_INCLUDE "${_manus_sdk_client_dir}/ManusSDK/include")
+    
+    # Verify the files exist
+    if(NOT EXISTS "${_MANUS_SDK_DLL}")
+        message(FATAL_ERROR "ManusSDK DLL not found at: ${_MANUS_SDK_DLL}")
+    endif()
+    if(NOT EXISTS "${_MANUS_SDK_LIB}")
+        message(FATAL_ERROR "ManusSDK LIB not found at: ${_MANUS_SDK_LIB}")
+    endif()
+    if(NOT EXISTS "${_MANUS_SDK_INCLUDE}")
+        message(FATAL_ERROR "ManusSDK include directory not found at: ${_MANUS_SDK_INCLUDE}")
+    endif()
+    
+    set_target_properties(ManusSDK::ManusSDK PROPERTIES
+        IMPORTED_LOCATION "${_MANUS_SDK_DLL}"
+        IMPORTED_IMPLIB "${_MANUS_SDK_LIB}"
+        INTERFACE_INCLUDE_DIRECTORIES "${_MANUS_SDK_INCLUDE}"
+        IMPORTED_LOCATION_RELEASE "${_MANUS_SDK_DLL}"
+        IMPORTED_IMPLIB_RELEASE "${_MANUS_SDK_LIB}"
+    )
+    
+    # For multi-config generators, also set Release-specific properties
+    set_target_properties(ManusSDK::ManusSDK PROPERTIES
+        MAP_IMPORTED_CONFIG_RELEASE Release
+        MAP_IMPORTED_CONFIG_DEBUG Release
+    )
+    
+elseif(APPLE)
+    set(_MANUS_SDK_LIB "${_manus_sdk_client_dir}/ManusSDK/lib/libManusSDK.dylib")
+    set(_MANUS_SDK_INCLUDE "${_manus_sdk_client_dir}/ManusSDK/include")
+    
+    if(NOT EXISTS "${_MANUS_SDK_LIB}")
+        message(FATAL_ERROR "ManusSDK dylib not found at: ${_MANUS_SDK_LIB}")
+    endif()
+    if(NOT EXISTS "${_MANUS_SDK_INCLUDE}")
+        message(FATAL_ERROR "ManusSDK include directory not found at: ${_MANUS_SDK_INCLUDE}")
+    endif()
+    
+    set_target_properties(ManusSDK::ManusSDK PROPERTIES
+        IMPORTED_LOCATION "${_MANUS_SDK_LIB}"
+        INTERFACE_INCLUDE_DIRECTORIES "${_MANUS_SDK_INCLUDE}"
+        IMPORTED_LOCATION_RELEASE "${_MANUS_SDK_LIB}"
+    )
+    
+elseif(UNIX)
+    set(_MANUS_SDK_LIB "${_manus_sdk_client_dir}/ManusSDK/lib/libManusSDK.so")
+    set(_MANUS_SDK_INCLUDE "${_manus_sdk_client_dir}/ManusSDK/include")
+    
+    if(NOT EXISTS "${_MANUS_SDK_LIB}")
+        message(FATAL_ERROR "ManusSDK shared library not found at: ${_MANUS_SDK_LIB}")
+    endif()
+    if(NOT EXISTS "${_MANUS_SDK_INCLUDE}")
+        message(FATAL_ERROR "ManusSDK include directory not found at: ${_MANUS_SDK_INCLUDE}")
+    endif()
+    
+    set_target_properties(ManusSDK::ManusSDK PROPERTIES
+        IMPORTED_LOCATION "${_MANUS_SDK_LIB}"
+        INTERFACE_INCLUDE_DIRECTORIES "${_MANUS_SDK_INCLUDE}"
+        IMPORTED_LOCATION_RELEASE "${_MANUS_SDK_LIB}"
+    )
+endif()
+
+# Store the SDK root for later use in installation
+set(MANUS_SDK_ROOT "${_manus_sdk_client_dir}" CACHE INTERNAL "ManusSDK root directory")
+
+# Install the ManusSDK library
+if(WIN32)
+    # On Windows, install the DLL to bin directory and the import library to lib directory
+    get_target_property(_manus_sdk_dll_location ManusSDK::ManusSDK IMPORTED_LOCATION)
+    if(_manus_sdk_dll_location)
+        install(FILES "${_manus_sdk_dll_location}"
+                DESTINATION ${CMAKE_INSTALL_BINDIR}
+                COMPONENT runtime)
+    endif()
+    
+    get_target_property(_manus_sdk_implib_location ManusSDK::ManusSDK IMPORTED_IMPLIB)
+    if(_manus_sdk_implib_location)
+        install(FILES "${_manus_sdk_implib_location}"
+                DESTINATION ${CMAKE_INSTALL_LIBDIR}
+                COMPONENT runtime)
+    endif()
+else()
+    # On Unix-like systems, install the shared library to lib directory
+    get_target_property(_manus_sdk_lib_location ManusSDK::ManusSDK IMPORTED_LOCATION)
+    if(_manus_sdk_lib_location)
+        install(FILES "${_manus_sdk_lib_location}"
+                DESTINATION ${CMAKE_INSTALL_LIBDIR}
+                COMPONENT runtime)
+    endif()
+endif()
+
+message(STATUS "Downloaded Manus SDK ${MANUS_SDK_DOWNLOAD_VERSION} from ${_manus_sdk_url}")
+message(STATUS "Using Manus SDK ${MANUS_SDK_DOWNLOAD_VERSION} from ${MANUS_SDK_ROOT}")
