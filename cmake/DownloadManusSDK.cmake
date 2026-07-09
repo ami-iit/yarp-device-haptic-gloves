@@ -152,11 +152,21 @@ elseif(UNIX)
     if(NOT EXISTS "${_MANUS_SDK_INCLUDE}")
         message(FATAL_ERROR "ManusSDK include directory not found at: ${_MANUS_SDK_INCLUDE}")
     endif()
-    
+
+    # The prebuilt Manus SDK shared library ships without a DT_SONAME. By
+    # default CMake links imported libraries by full path, which makes the
+    # linker bake that (build-relative) path into the consumer's DT_NEEDED
+    # entry, breaking it at runtime. IMPORTED_NO_SONAME makes CMake link via
+    # -L<dir> -l<name> so the linker records only the basename
+    # (libManusSDK_Integrated.so), resolved at runtime through the
+    # consumer's RPATH ($ORIGIN/../lib). Note: this property is only honored
+    # for targets CMake treats as shared libraries, hence SHARED IMPORTED
+    # (not UNKNOWN IMPORTED).
     set_target_properties(ManusSDK::ManusSDK PROPERTIES
         IMPORTED_LOCATION "${_MANUS_SDK_LIB}"
         INTERFACE_INCLUDE_DIRECTORIES "${_MANUS_SDK_INCLUDE}"
         IMPORTED_LOCATION_RELEASE "${_MANUS_SDK_LIB}"
+        IMPORTED_NO_SONAME TRUE
     )
 endif()
 
