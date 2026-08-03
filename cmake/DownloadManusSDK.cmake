@@ -143,7 +143,13 @@ elseif(APPLE)
     )
     
 elseif(UNIX)
-    set(_MANUS_SDK_LIB "${_manus_sdk_client_dir}/ManusSDK/lib/libManusSDK.so")
+    # On Linux, link against the "Integrated" variant. The plain libManusSDK.so
+    # dynamically depends on libgrpc.so.9, libgrpc++.so.1, libprotobuf.so.22 and
+    # libzmq.so.5, which are neither shipped in the SDK nor available as system
+    # packages, causing a runtime "cannot open shared object file" failure.
+    # libManusSDK_Integrated.so statically bundles those dependencies and only
+    # needs standard system libraries.
+    set(_MANUS_SDK_LIB "${_manus_sdk_client_dir}/ManusSDK/lib/libManusSDK_Integrated.so")
     set(_MANUS_SDK_INCLUDE "${_manus_sdk_client_dir}/ManusSDK/include")
     
     if(NOT EXISTS "${_MANUS_SDK_LIB}")
