@@ -87,3 +87,6 @@ jobs:
 
       - name: Install
         run: cmake --install build
+
+      - name: Test device loading
+        run: yarp plugin ManusGlove
