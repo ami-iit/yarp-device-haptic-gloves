@@ -6,6 +6,8 @@ on:
       - main
       - master
     paths:
+      - 'cmake/**'
+      - '.github/workflows/ci-conda-manus.yml'
       - 'ManusGlove/**'
       - '!ManusGlove/**/*.md'
       - '!ManusGlove/**/*.xml'
