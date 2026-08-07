@@ -13,6 +13,8 @@ on:
       - '!ManusGlove/**/*.xml'
   pull_request:
     paths:
+      - 'cmake/**'
+      - '.github/workflows/ci-conda-manus.yml'
       - 'ManusGlove/**'
       - '!ManusGlove/**/*.md'
       - '!ManusGlove/**/*.xml'
