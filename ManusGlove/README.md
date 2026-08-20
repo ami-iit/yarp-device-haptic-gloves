@@ -89,7 +89,6 @@ If you prefer to provide the SDK yourself, export:
 
 ```bash
 export ManusGlove_DIR=<PATH_TO>/ManusSDK_v3.1.1/SDKClient_Linux
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$ManusGlove_DIR$/ManusSDK/lib
 ```
 
 ```bash
@@ -108,7 +107,6 @@ If you installed in a non-system prefix, export:
 
 ```bash
 export YARP_DATA_DIRS=$YARP_DATA_DIRS:<INSTALL_PREFIX>/share/yarp
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:<INSTALL_PREFIX>/lib
 ```
 
 ### Run the device
