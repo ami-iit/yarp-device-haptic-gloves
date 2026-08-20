@@ -1,3 +1,4 @@
 prepend-non-duplicate;PATH;lib/yarp
 prepend-non-duplicate;LD_LIBRARY_PATH;lib/yarp
+prepend-non-duplicate;DYLD_LIBRARY_PATH;lib/yarp
 prepend-non-duplicate;YARP_DATA_DIRS;share/yarp
