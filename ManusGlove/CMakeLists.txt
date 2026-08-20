@@ -4,10 +4,6 @@
 #* CopyPolicy: Released under the terms of the BSD-3-Clause
 #*/
 
-project(YARPManusGlove VERSION "0.0.1"
-                  LANGUAGES CXX C)
-
-
 set(ManusGloveDevName "ManusGlove")
 
 if(ENABLE_MANUS_SDK_DOWNLOAD)

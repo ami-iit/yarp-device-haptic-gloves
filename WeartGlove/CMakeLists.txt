@@ -4,9 +4,6 @@
 #* CopyPolicy: Released under the terms of the BSD-3-Clause
 #*/
 
-project(YARPWeArtGlove VERSION "0.0.1"
-                  LANGUAGES CXX C)
-
 set(WeArtGloveLibName "WeArtGloveLib")
 set(WeArtGloveDevName "WeArtGlove")
 
