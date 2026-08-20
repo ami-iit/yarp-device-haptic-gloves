@@ -143,7 +143,13 @@ elseif(APPLE)
     )
     
 elseif(UNIX)
-    set(_MANUS_SDK_LIB "${_manus_sdk_client_dir}/ManusSDK/lib/libManusSDK.so")
+    # On Linux, link against the "Integrated" variant. The plain libManusSDK.so
+    # dynamically depends on libgrpc.so.9, libgrpc++.so.1, libprotobuf.so.22 and
+    # libzmq.so.5, which are neither shipped in the SDK nor available as system
+    # packages, causing a runtime "cannot open shared object file" failure.
+    # libManusSDK_Integrated.so statically bundles those dependencies and only
+    # needs standard system libraries.
+    set(_MANUS_SDK_LIB "${_manus_sdk_client_dir}/ManusSDK/lib/libManusSDK_Integrated.so")
     set(_MANUS_SDK_INCLUDE "${_manus_sdk_client_dir}/ManusSDK/include")
     
     if(NOT EXISTS "${_MANUS_SDK_LIB}")
@@ -152,11 +158,21 @@ elseif(UNIX)
     if(NOT EXISTS "${_MANUS_SDK_INCLUDE}")
         message(FATAL_ERROR "ManusSDK include directory not found at: ${_MANUS_SDK_INCLUDE}")
     endif()
-    
+
+    # The prebuilt Manus SDK shared library ships without a DT_SONAME. By
+    # default CMake links imported libraries by full path, which makes the
+    # linker bake that (build-relative) path into the consumer's DT_NEEDED
+    # entry, breaking it at runtime. IMPORTED_NO_SONAME makes CMake link via
+    # -L<dir> -l<name> so the linker records only the basename
+    # (libManusSDK_Integrated.so), resolved at runtime through the
+    # consumer's RPATH ($ORIGIN/../lib). Note: this property is only honored
+    # for targets CMake treats as shared libraries, hence SHARED IMPORTED
+    # (not UNKNOWN IMPORTED).
     set_target_properties(ManusSDK::ManusSDK PROPERTIES
         IMPORTED_LOCATION "${_MANUS_SDK_LIB}"
         INTERFACE_INCLUDE_DIRECTORIES "${_MANUS_SDK_INCLUDE}"
         IMPORTED_LOCATION_RELEASE "${_MANUS_SDK_LIB}"
+        IMPORTED_NO_SONAME TRUE
     )
 endif()
 

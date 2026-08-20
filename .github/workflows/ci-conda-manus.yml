@@ -6,11 +6,15 @@ on:
       - main
       - master
     paths:
+      - 'cmake/**'
+      - '.github/workflows/ci-conda-manus.yml'
       - 'ManusGlove/**'
       - '!ManusGlove/**/*.md'
       - '!ManusGlove/**/*.xml'
   pull_request:
     paths:
+      - 'cmake/**'
+      - '.github/workflows/ci-conda-manus.yml'
       - 'ManusGlove/**'
       - '!ManusGlove/**/*.md'
       - '!ManusGlove/**/*.xml'
@@ -87,3 +91,12 @@ jobs:
 
       - name: Install
         run: cmake --install build
+
+      - name: Configure runtime env (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          echo "YARP_DATA_DIRS=${YARP_DATA_DIRS};${CONDA_PREFIX}\\share\\yarp" >> "$GITHUB_ENV"
+          echo "${CONDA_PREFIX}\\lib\\yarp" >> "$GITHUB_PATH"
+
+      - name: Test device loading
+        run: yarp plugin ManusGlove
