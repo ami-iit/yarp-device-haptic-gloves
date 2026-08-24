@@ -5,9 +5,7 @@ cmake_minimum_required(VERSION 3.16)
 
 set(PROJECT_VERSION "1.0.0")
 
-set (YARP_DEVICE_HAPTIC_GLOVES_NAME YarpDeviceHapticGloves)
-
-project(${YARP_DEVICE_HAPTIC_GLOVES_NAME} VERSION ${PROJECT_VERSION}
+project(YarpDeviceHapticGloves VERSION ${PROJECT_VERSION}
                   LANGUAGES CXX C)
 
 set(CMAKE_CXX_STANDARD 14)
@@ -37,6 +35,8 @@ find_package(Eigen3 REQUIRED)
 set(YARP_FORCE_DYNAMIC_PLUGINS ON)
 option(BUILD_SHARED_LIBS "Build libraries as shared as opposed to static" ON)
 
+yarp_configure_plugins_installation(YarpDeviceHapticGloves)
+
 option(YARP_DEVICE_WEART_GLOVE_ENABLE "Flag that enables building WeArtGlove device" OFF)
 option(YARP_DEVICE_MANUS_GLOVE_ENABLE "Flag that enables building ManusGlove device" OFF)
 option(YARP_DEVICE_SENSE_GLOVE_ENABLE "Flag that enables building SenseGlove device" OFF)
@@ -56,5 +56,11 @@ endif()
 if(YARP_DEVICE_SENSE_GLOVE_ENABLE)
     add_subdirectory(SenseGlove)
 endif()
+
+set(YARP_DEVICE_HAPTIC_GLOVES_SHARE_DIR "${CMAKE_INSTALL_DATADIR}/yarp-device-haptic-gloves")
+
+# Install hooks used by colcon setup scripts.
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/share/yarp-device-haptic-gloves/environment/hook.dsv
+    DESTINATION ${YARP_DEVICE_HAPTIC_GLOVES_SHARE_DIR}/environment)
 
 include(AddUninstallTarget)

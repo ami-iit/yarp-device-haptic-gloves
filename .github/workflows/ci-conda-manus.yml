@@ -49,9 +49,12 @@ jobs:
         uses: ilammy/msvc-dev-cmd@v1
 
       - name: Setup micromamba environment
-        uses: mamba-org/setup-micromamba@v2
+        uses: mamba-org/setup-micromamba@v3
         with:
           environment-name: yarp-device-haptic-gloves-ci
+          init-shell: >-
+            bash
+            powershell
           cache-environment: true
           create-args: >-
             python=3.11
@@ -60,43 +63,45 @@ jobs:
             pkg-config
             compilers
             eigen
+            colcon-common-extensions
             yarp
             human-dynamics-estimation
 
-      - name: Configure
+      - name: Build (with colcon)
         run: |
           if [[ "${RUNNER_OS}" == "Windows" ]]; then
-            cmake -S . -B build \
-              -G Ninja \
-              -DCMAKE_BUILD_TYPE=Release \
-              -DCMAKE_INSTALL_PREFIX="${CONDA_PREFIX}" \
-              -DCMAKE_C_COMPILER=cl \
-              -DCMAKE_CXX_COMPILER=cl \
-              -DYARP_DEVICE_MANUS_GLOVE_ENABLE=ON \
-              -DENABLE_MANUS_SDK_DOWNLOAD=ON \
-              -DMANUS_SDK_DOWNLOAD_VERSION="${{ matrix.manus_sdk_version }}"
+            colcon build \
+              --merge-install \
+              --event-handlers console_direct+ \
+              --cmake-args \
+                -G Ninja \
+                -DCMAKE_BUILD_TYPE=Release \
+                -DCMAKE_C_COMPILER=cl \
+                -DCMAKE_CXX_COMPILER=cl \
+                -DYARP_DEVICE_MANUS_GLOVE_ENABLE=ON \
+                -DENABLE_MANUS_SDK_DOWNLOAD=ON \
+                -DMANUS_SDK_DOWNLOAD_VERSION=${{ matrix.manus_sdk_version }}
           else
-            cmake -S . -B build \
-              -G Ninja \
-              -DCMAKE_BUILD_TYPE=Release \
-              -DCMAKE_INSTALL_PREFIX="${CONDA_PREFIX}" \
-              -DYARP_DEVICE_MANUS_GLOVE_ENABLE=ON \
-              -DENABLE_MANUS_SDK_DOWNLOAD=ON \
-              -DMANUS_SDK_DOWNLOAD_VERSION="${{ matrix.manus_sdk_version }}"
+            colcon build \
+              --merge-install \
+              --event-handlers console_direct+ \
+              --cmake-args \
+                -G Ninja \
+                -DCMAKE_BUILD_TYPE=Release \
+                -DYARP_DEVICE_MANUS_GLOVE_ENABLE=ON \
+                -DENABLE_MANUS_SDK_DOWNLOAD=ON \
+                -DMANUS_SDK_DOWNLOAD_VERSION=${{ matrix.manus_sdk_version }}
           fi
 
-
-      - name: Build
-        run: cmake --build build --parallel
-
-      - name: Install
-        run: cmake --install build
-
-      - name: Configure runtime env (Windows)
-        if: runner.os == 'Windows'
+      - name: Test device loading (Linux/macOS)
+        if: runner.os != 'Windows'
         run: |
-          echo "YARP_DATA_DIRS=${YARP_DATA_DIRS};${CONDA_PREFIX}\\share\\yarp" >> "$GITHUB_ENV"
-          echo "${CONDA_PREFIX}\\lib\\yarp" >> "$GITHUB_PATH"
+          source install/setup.sh
+          yarp plugin ManusGlove
 
-      - name: Test device loading
-        run: yarp plugin ManusGlove
+      - name: Test device loading (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          . install/setup.ps1
+          yarp plugin ManusGlove
